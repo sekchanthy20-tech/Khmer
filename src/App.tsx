@@ -171,6 +171,74 @@ const cleanOptionText = (text: string) => {
   return text.replace(/^[A-Zក-ឃ0-9][\.\)]\s*/i, '').trim();
 };
 
+type Answer = 'A' | 'B' | 'C' | 'D';
+
+function generateHumanBalancedKey(count: number): Answer[] {
+  const letters: Answer[] = ['A', 'B', 'C', 'D'];
+
+  function getDistribution(n: number) {
+    const base = Math.floor(n / 4);
+    const remainder = n % 4;
+
+    const dist: Record<Answer, number> = {
+      A: base,
+      B: base,
+      C: base,
+      D: base,
+    };
+
+    for (let i = 0; i < remainder; i++) {
+      const pick = letters[Math.floor(Math.random() * 4)];
+      dist[pick]++;
+    }
+
+    letters.forEach(l => {
+      if (dist[l] === 0 && n >= 4) {
+        const maxKey = Object.keys(dist).reduce((a, b) =>
+          dist[a as Answer] > dist[b as Answer] ? a : b
+        ) as Answer;
+        dist[maxKey]--;
+        dist[l]++;
+      }
+    });
+
+    return dist;
+  }
+
+  const distribution = getDistribution(count);
+  let pool: Answer[] = [];
+  (Object.keys(distribution) as Answer[]).forEach(letter => {
+    pool.push(...Array(distribution[letter]).fill(letter));
+  });
+
+  function shuffleWithStreakControl(arr: Answer[]): Answer[] {
+    let shuffled: Answer[] = [];
+    let attempts = 0;
+
+    while (attempts < 1000) {
+      shuffled = [...arr].sort(() => Math.random() - 0.5);
+
+      let valid = true;
+      for (let i = 2; i < shuffled.length; i++) {
+        if (
+          shuffled[i] === shuffled[i - 1] &&
+          shuffled[i] === shuffled[i - 2]
+        ) {
+          valid = false;
+          break;
+        }
+      }
+
+      if (valid) return shuffled;
+      attempts++;
+    }
+
+    return shuffled;
+  }
+
+  return shuffleWithStreakControl(pool);
+}
+
 // --- Gemini Service ---
 
 const generateTest = async (
@@ -184,11 +252,19 @@ const generateTest = async (
   if (!apiKey) throw new Error("Gemini API key is missing. Please set it up in your environment.");
   
   const ai = new GoogleGenAI({ apiKey });
-  const model = "gemini-3.1-pro-preview";
   
   const activeProtocols = config.protocols.filter(p => p.active).map(p => `- ${p.title}: ${p.description}`).join('\n');
   const activeRules = config.strictRules.filter(r => r.active).map(r => `- ${r.title}: ${r.description}`).join('\n');
   const moduleRequirements = config.exerciseConfigs.map(ex => `- ${ex.label} (${ex.id}): Generate EXACTLY ${ex.itemCount} items.`).join('\n');
+
+  // Calculate total MCQ count and generate balanced keys
+  const mcqModules = ['kh_mcq', 'ma_mcq', 'kh_circle', 'kh_vocab_ng', 'ma_visual_large', 'ma_visual_compact'];
+  const totalMcqCount = config.exerciseConfigs
+    .filter(ex => mcqModules.includes(ex.id))
+    .reduce((sum, ex) => sum + ex.itemCount, 0);
+  
+  const balancedKeys = generateHumanBalancedKey(totalMcqCount);
+  const keysString = balancedKeys.join(', ');
 
   const prompt = `
     I HATE SUMMARIES. You are a STRICT MULTI-MODULE GENERATION ENGINE for "MoEYS Khmer Curriculum".
@@ -200,7 +276,8 @@ const generateTest = async (
     ${activeRules}
     ${config.numberStyle === 'Khmer' ? '- MANDATORY: Use Khmer numerals (០, ១, ២, ៣, ៤, ៥, ៦, ៧, ៨, ៩) for all numbering and mathematical values.' : '- Use Roman/Arabic numerals.'}
     - MANDATORY: For MCQ options, provide ONLY the answer text in the 'options' array. DO NOT include prefixes like 'A.', 'B.', 'ក.', 'ខ.' etc.
-    - NEAR-MISS DISTRACTORS (CRITICAL): For ALL multiple-choice questions, include at least 1 or 2 "Near-miss" distractors. These are wrong answers that are plausible and result from common mistakes (e.g., for 4+4, include 7 or 9; for spelling, include a common misspelling). This is MANDATORY to make the test feel like it was designed by a human teacher.
+    - EXTREME NEAR-MISS DISTRACTORS (CRITICAL): For ALL multiple-choice questions, all options MUST be plausible and potentially correct in some context, but only ONE is the absolute 'best' answer. Example: 'ដើម្បីឱ្យមានមិត្តភក្តិកាន់តែច្រើន យើងគួរតែ ____ ក. ខិតខំរៀនសូត្រ ខ. ជួយពួកគេ និងចែករំលែកអ្វីមួយ គ. និយាយរឿងល្អៗអំពីពួកគេ ឃ. ធ្វើឱ្យពួកគេមានអារម្មណ៍ល្អ' (To have more friends, we should: A. Study hard, B. Help them and share something, C. Speak good things about them, D. Make them feel good). While C and D are good, B is the most direct and 'best' answer in the MoEYS curriculum context. This is MANDATORY to make the test challenging and high-quality.
+    - HUMAN-BALANCED ANSWER KEYS (STRICT): You MUST follow this exact sequence of correct answer keys for the MCQ questions in the order they appear: [${keysString}]. For example, if the first key is 'B', the correct answer for the first MCQ question MUST be at index 1 of the options array.
     - COMPACTNESS (CRITICAL): The generated test MUST be space-efficient. Avoid long, wordy questions or options if they can be expressed more concisely. PREFER 'single' or 'double' options_layout for MCQs.
     - VISUAL MATH (CRITICAL): For math questions like "X + Y = ?", the 'image_prompt' MUST specify the EXACT count of items for both X and Y. Example: "4 red apples, a plus sign, 4 red apples...". Use simple, countable objects like apples, mangoes, or pencils.
     - SELECTIVE IMAGE GENERATION (STRICT): Only provide an 'image_prompt' if the question CANNOT be answered without a visual aid (e.g., counting, identifying shapes, visual math). DO NOT generate images for abstract or moral questions.
@@ -251,9 +328,9 @@ const generateTest = async (
     parts.push({ text: `SOURCE TEXT: ${sourceContent.text}` });
   }
 
-  try {
+  const generateWithModel = async (modelName: string) => {
     const response = await ai.models.generateContent({
-      model,
+      model: modelName,
       contents: [{ parts }],
       config: {
         systemInstruction: "You are a specialized MoEYS Curriculum Test Builder. Generate high-quality exercises. If source is short, use internal knowledge of MoEYS curriculum. Never return empty questions.",
@@ -287,13 +364,39 @@ const generateTest = async (
         }
       },
     });
+    return response;
+  };
+
+  try {
+    let response;
+    try {
+      response = await generateWithModel("gemini-3.1-pro-preview");
+    } catch (proError: any) {
+      console.warn("Pro model failed, falling back to Flash model:", proError);
+      response = await generateWithModel("gemini-3-flash-preview");
+    }
 
     const text = response.text || '{}';
     const cleanJson = text.replace(/^```json\n?/, '').replace(/\n?```$/, '').trim();
     return JSON.parse(cleanJson);
   } catch (error: any) {
     console.error("Generation Error:", error);
-    throw new Error("Failed to generate test. Check your API key and quota.");
+    
+    // Extract detailed error message
+    let errorMessage = "Unknown error";
+    if (error?.message) {
+      errorMessage = error.message;
+    } else if (typeof error === 'string') {
+      errorMessage = error;
+    } else {
+      try {
+        errorMessage = JSON.stringify(error);
+      } catch (e) {
+        errorMessage = "Could not stringify error object";
+      }
+    }
+
+    throw new Error(`Failed to generate test: ${errorMessage}. \n\nTroubleshooting:\n1. Ensure you have REDEPLOYED on Vercel after adding the GEMINI_API_KEY variable.\n2. Check if your API key is restricted by region or IP.\n3. Verify your quota in Google AI Studio.`);
   }
 };
 
