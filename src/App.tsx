@@ -149,6 +149,7 @@ const INITIAL_EXERCISE_TYPES: ExerciseConfig[] = [
   { id: 'kh_mcq', subject: 'Khmer', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Standard multiple choice questions with 4 options.', description: 'General multiple choice.', selected: false, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
   { id: 'kh_ct', subject: 'Khmer', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Open-ended questions requiring analytical reasoning and deep thinking.', description: 'Deep reasoning and analysis questions.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Brain' },
   { id: 'kh_ans', subject: 'Khmer', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Comprehension questions requiring written answers based on text or general knowledge.', description: 'Standard question and answer format.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'FileText' },
+  { id: 'kh_disc', subject: 'Khmer', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions for classroom discussion or debate.', description: 'Discussion and debate questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
   { id: 'kh_fib', subject: 'Khmer', label: 'បំពេញល្បះ (Fill-in-blank)', rule: 'Complete sentences by filling in missing words or phrases.', description: 'Sentence completion.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Minus' },
 
   // --- MATH ---
@@ -157,18 +158,27 @@ const INITIAL_EXERCISE_TYPES: ExerciseConfig[] = [
   { id: 'ma_geo', subject: 'Math', label: 'ធរណីមាត្រ (Geometry)', rule: 'Shapes, area, volume, and geometric properties. Use image_prompt for diagrams.', description: 'Geometry and spatial reasoning.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Triangle' },
   { id: 'ma_stat', subject: 'Math', label: 'ស្ថិតិ (Statistics)', rule: 'Data interpretation, probability, and chart-based questions.', description: 'Data and probability.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'BarChart' },
   { id: 'ma_mcq', subject: 'Math', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Math problems with 4 distinct options and LaTeX formulas.', description: 'Math multiple choice.', selected: false, active: true, itemCount: 10, columns: 1, icon: 'Hash' },
+  { id: 'ma_disc', subject: 'Math', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about mathematical concepts or real-world applications.', description: 'Math discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
   { id: 'ma_deep_exp', subject: 'Math', label: 'ដំណោះស្រាយលម្អិត (Deep Math)', rule: 'Provide deep, step-by-step mathematical explanations in the traditional Khmer MoEYS style (គេមាន, រក, តាមរូបមន្ត, ដូចនេះ). Use LaTeX.', description: 'Detailed step-by-step solutions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'FileText' },
 
   // --- SCIENCE (Physics, Chemistry, Biology) ---
+  { id: 'sci_disc', subject: 'Physics', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about physical laws, scientific ethics, or real-world applications.', description: 'Physics discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
   { id: 'sci_theory', subject: 'Physics', label: 'ទ្រឹស្ដី (Theory)', rule: 'Conceptual questions about physical laws and principles.', description: 'Physics theory.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Activity' },
   { id: 'sci_calc', subject: 'Physics', label: 'លំហាត់គណនា (Calculation)', rule: 'Physics problems requiring formula application and calculation.', description: 'Physics problems.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Calculator' },
+  { id: 'chem_disc', subject: 'Chemistry', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about chemical reactions, safety, or environmental impact.', description: 'Chemistry discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
   { id: 'chem_eq', subject: 'Chemistry', label: 'សមីការគីមី (Equations)', rule: 'Balancing chemical equations and reaction types.', description: 'Chemical reactions.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'FlaskConical' },
+  { id: 'bio_disc', subject: 'Biology', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about biological systems, ethics, or health.', description: 'Biology discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
   { id: 'bio_cell', subject: 'Biology', label: 'ជីវវិទ្យា (Biology)', rule: 'Questions about cells, organisms, and biological systems.', description: 'Biological concepts.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Dna' },
 
   // --- SOCIAL STUDIES ---
+  { id: 'hist_disc', subject: 'History', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about historical causes, effects, and lessons.', description: 'History discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
   { id: 'hist_event', subject: 'History', label: 'ប្រវត្តិវិទ្យា (History)', rule: 'Questions about historical events, dates, and figures in Cambodia and the world.', description: 'Historical knowledge.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'History' },
+  { id: 'geo_disc', subject: 'Geography', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about human-environment interaction or global issues.', description: 'Geography discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
   { id: 'geo_map', subject: 'Geography', label: 'ភូមិវិទ្យា (Geography)', rule: 'Questions about maps, climate, and physical geography.', description: 'Geographical knowledge.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Map' },
+  { id: 'civ_disc', subject: 'Moral-Civics', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about ethics, society, and civic duties. Example: "How can we make more friends at school?".', description: 'Civics discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
   { id: 'civ_moral', subject: 'Moral-Civics', label: 'សីលធម៌-ពលរដ្ឋ (Civics)', rule: 'Questions about ethics, society, and civic duties.', description: 'Moral and civic education.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Heart' },
+  { id: 'eng_disc', subject: 'English', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions in English to practice speaking and critical thinking.', description: 'English discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+  { id: 'ict_disc', subject: 'ICT', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about technology, digital citizenship, and the future of ICT.', description: 'ICT discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
 ];
 
 const INITIAL_PROTOCOLS: MasterProtocol[] = [
@@ -327,6 +337,7 @@ const generateTest = async (
         5. Show step-by-step calculations with clear logical flow.
         6. Use "ដូចនេះ" (Therefore) for the final answer, boxed or clearly highlighted.
         7. Use LaTeX for ALL mathematical expressions and formulas (e.g., $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$).
+    - DISCUSSION QUESTIONS (NEW): For any module with "disc" in its ID (Discussion), generate open-ended, thought-provoking questions that encourage critical thinking and classroom debate. Example: "តើយើងអាចបង្កើតមិត្តភក្តិឱ្យបានកាន់តែច្រើននៅក្នុងសាលារៀនដោយរបៀបណា?" (How can we make more friends at school?). These questions should NOT have MCQ options.
     - SELECTIVE IMAGE GENERATION (STRICT): Only provide an 'image_prompt' if the question CANNOT be answered without a visual aid (e.g., counting, identifying shapes, visual math). DO NOT generate images for abstract or moral questions.
     - IMAGE RELEVANCE (CRITICAL): The 'image_prompt' MUST be in ENGLISH and provide a literal, detailed description. For math like "4 + 4 = ?", the prompt MUST be: "Educational clipart for kids: 4 red apples, a plus symbol, 4 red apples, an equals sign, and a question mark. High quality, white background, simple style."
     - AVOID KHMER CHARACTERS in 'image_prompt'. Use common objects: apples, mangoes, pencils, watches, balls.
