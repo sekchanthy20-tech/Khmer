@@ -25,7 +25,19 @@ import {
   Share2,
   MoreVertical,
   X,
-  AlertCircle
+  AlertCircle,
+  ExternalLink,
+  Book,
+  FolderOpen,
+  CheckSquare,
+  Triangle,
+  BarChart,
+  Hash,
+  Activity,
+  FlaskConical,
+  Dna,
+  Map,
+  Heart
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import Markdown from 'react-markdown';
@@ -92,6 +104,7 @@ interface StrictRule {
 
 interface TestConfig {
   numberStyle: 'Khmer' | 'Roman';
+  showAnswerKeys: boolean;
   font: string;
   fontSize: string;
   exerciseConfigs: ExerciseConfig[];
@@ -100,7 +113,7 @@ interface TestConfig {
 }
 
 interface TestData {
-  id?: number;
+  id?: string;
   title: string;
   subject: string;
   grade: string;
@@ -108,7 +121,9 @@ interface TestData {
   config: TestConfig;
   questions: Question[];
   sourceText?: string;
+  source_text?: string;
   created_at?: string;
+  timestamp?: string;
 }
 
 // --- Constants ---
@@ -125,24 +140,35 @@ const KHMER_FONTS = [
 ];
 
 const INITIAL_EXERCISE_TYPES: ExerciseConfig[] = [
-  { id: 'kh_mcq', subject: 'Khmer', label: 'MCQ', rule: 'Strict multiple choice with 4 distinct options.', description: 'Standard multiple choice questions with 4 options.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
-  { id: 'kh_ct', subject: 'Khmer', label: 'Critical Thinking', rule: 'Open-ended questions requiring analytical reasoning.', description: 'Deep reasoning and analysis questions.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Brain' },
-  { id: 'kh_fib', subject: 'Khmer', label: 'Fill-in the blank', rule: 'Sentences with missing key terms.', description: 'Complete sentences by filling in missing words.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Type' },
-  { id: 'kh_sc', subject: 'Khmer', label: 'Sentence completion', rule: 'Partial sentences requiring contextual completion.', description: 'Finish the sentence based on context.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'PenTool' },
-  { id: 'kh_ans', subject: 'Khmer', label: 'Answer questions from text', rule: 'Comprehension questions based on the source text.', description: 'Reading comprehension questions.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'FileText' },
-  { id: 'kh_circle', subject: 'Khmer', label: 'Circle the correct answer', rule: 'MCQ style but formatted for circling the answer.', description: 'Visual MCQ for younger students.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Circle' },
-  { id: 'kh_tf', subject: 'Khmer', label: 'True/False', rule: 'Statements that students must identify as True or False.', description: 'Binary choice questions.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'ToggleLeft' },
-  { id: 'kh_g1', subject: 'Khmer', label: 'Grade 1 Foundation', rule: 'Basic letter recognition and simple word matching for Grade 1.', description: 'Foundational Khmer for early learners.', selected: false, active: true, itemCount: 10, columns: 1, icon: 'Baby' },
-  { id: 'kh_speak', subject: 'Khmer', label: 'Speaking', rule: 'Oral examination questions focusing on pronunciation and fluency.', description: 'Prompts for oral assessment.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Mic' },
-  { id: 'kh_vocab_ng', subject: 'Khmer', label: 'Vocabulary (No-Grammar)', rule: 'Strict Meaning-Only Vocabulary. All options must be the same part of speech. No tenses/conjugation traps. Stems must use inference logic. All options must fit grammatically.', description: 'Pure vocabulary testing without grammar interference.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Book' },
-  { id: 'ma_mcq', subject: 'Math', label: 'MCQ', rule: 'Mathematical multiple choice with LaTeX formulas.', description: 'Math problems with 4 options.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Hash' },
-  { id: 'ma_ct', subject: 'Math', label: 'Critical Thinking', rule: 'Complex problem solving requiring step-by-step logic.', description: 'Multi-step math reasoning problems.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Zap' },
-  { id: 'ma_fib', subject: 'Math', label: 'Fill-in the blank', rule: 'Math equations with missing variables.', description: 'Equation completion.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Minus' },
-  { id: 'ma_tf', subject: 'Math', label: 'True/False', rule: 'Mathematical statements to verify.', description: 'Verify math identities or statements.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'CheckCircle' },
-  { id: 'ma_g1', subject: 'Math', label: 'Grade 1 Addition/Subtraction', rule: 'Simple visual math problems for Grade 1.', description: 'Early math for Grade 1.', selected: false, active: true, itemCount: 10, columns: 1, icon: 'PlusCircle' },
-  { id: 'ma_visual_large', subject: 'Math', label: 'Visual Counting (Large)', rule: 'Single large visual problem for counting/addition. MANDATORY: Use image_prompt for a high-quality illustration. Format as MCQ.', description: 'Large scale visual math problem.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Image' },
-  { id: 'ma_visual_compact', subject: 'Math', label: 'Visual Addition (Small Pictures)', rule: 'Multiple small rows of visual addition (e.g., apples + apples). MANDATORY: Use image_prompt for each row. Designed to save space.', description: 'Space-saving visual math problems.', selected: false, active: true, itemCount: 10, columns: 2, icon: 'Grid' },
-  { id: 'ma_copy', subject: 'Math', label: 'Copy exercises from sources', rule: 'Replicate exercises from source but change values slightly.', description: 'Source-based variation exercises.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Copy' },
+  // --- KHMER LANGUAGE ---
+  { id: 'kh_reading', subject: 'Khmer', label: 'អំណាន (Reading)', rule: 'Comprehension questions based on a provided text or MoEYS standard literature.', description: 'Reading comprehension and analysis.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'BookOpen' },
+  { id: 'kh_vocab', subject: 'Khmer', label: 'វាក្យសព្ទ (Vocabulary)', rule: 'Synonyms, antonyms, and word meanings in context.', description: 'Word study and usage.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Book' },
+  { id: 'kh_grammar', subject: 'Khmer', label: 'វេយ្យាករណ៍ (Grammar)', rule: 'Parts of speech, sentence types, and punctuation rules.', description: 'Grammar and syntax.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Type' },
+  { id: 'kh_spelling', subject: 'Khmer', label: 'អក្ខរាវិរុទ្ធ (Spelling)', rule: 'Identify correctly spelled words or correct spelling errors.', description: 'Orthography and spelling.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'PenTool' },
+  { id: 'kh_writing', subject: 'Khmer', label: 'សំណេរ (Writing)', rule: 'Short writing prompts, sentence construction, or paragraph completion.', description: 'Composition and creative writing.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'Edit3' },
+  { id: 'kh_mcq', subject: 'Khmer', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Standard multiple choice questions with 4 options.', description: 'General multiple choice.', selected: false, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'kh_ct', subject: 'Khmer', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Open-ended questions requiring analytical reasoning and deep thinking.', description: 'Deep reasoning and analysis questions.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Brain' },
+  { id: 'kh_ans', subject: 'Khmer', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Comprehension questions requiring written answers based on text or general knowledge.', description: 'Standard question and answer format.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'FileText' },
+  { id: 'kh_fib', subject: 'Khmer', label: 'បំពេញល្បះ (Fill-in-blank)', rule: 'Complete sentences by filling in missing words or phrases.', description: 'Sentence completion.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Minus' },
+
+  // --- MATH ---
+  { id: 'ma_calc', subject: 'Math', label: 'គណនា (Calculation)', rule: 'Arithmetic operations, algebra, and numerical expressions using LaTeX.', description: 'Basic and advanced calculations.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Calculator' },
+  { id: 'ma_prob', subject: 'Math', label: 'ចំណោទ (Word Problems)', rule: 'Real-world math problems requiring logical steps and solutions.', description: 'Applied mathematics.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Zap' },
+  { id: 'ma_geo', subject: 'Math', label: 'ធរណីមាត្រ (Geometry)', rule: 'Shapes, area, volume, and geometric properties. Use image_prompt for diagrams.', description: 'Geometry and spatial reasoning.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Triangle' },
+  { id: 'ma_stat', subject: 'Math', label: 'ស្ថិតិ (Statistics)', rule: 'Data interpretation, probability, and chart-based questions.', description: 'Data and probability.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'BarChart' },
+  { id: 'ma_mcq', subject: 'Math', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Math problems with 4 distinct options and LaTeX formulas.', description: 'Math multiple choice.', selected: false, active: true, itemCount: 10, columns: 1, icon: 'Hash' },
+  { id: 'ma_deep_exp', subject: 'Math', label: 'ដំណោះស្រាយលម្អិត (Deep Math)', rule: 'Provide deep, step-by-step mathematical explanations in the traditional Khmer MoEYS style (គេមាន, រក, តាមរូបមន្ត, ដូចនេះ). Use LaTeX.', description: 'Detailed step-by-step solutions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'FileText' },
+
+  // --- SCIENCE (Physics, Chemistry, Biology) ---
+  { id: 'sci_theory', subject: 'Physics', label: 'ទ្រឹស្ដី (Theory)', rule: 'Conceptual questions about physical laws and principles.', description: 'Physics theory.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Activity' },
+  { id: 'sci_calc', subject: 'Physics', label: 'លំហាត់គណនា (Calculation)', rule: 'Physics problems requiring formula application and calculation.', description: 'Physics problems.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Calculator' },
+  { id: 'chem_eq', subject: 'Chemistry', label: 'សមីការគីមី (Equations)', rule: 'Balancing chemical equations and reaction types.', description: 'Chemical reactions.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'FlaskConical' },
+  { id: 'bio_cell', subject: 'Biology', label: 'ជីវវិទ្យា (Biology)', rule: 'Questions about cells, organisms, and biological systems.', description: 'Biological concepts.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Dna' },
+
+  // --- SOCIAL STUDIES ---
+  { id: 'hist_event', subject: 'History', label: 'ប្រវត្តិវិទ្យា (History)', rule: 'Questions about historical events, dates, and figures in Cambodia and the world.', description: 'Historical knowledge.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'History' },
+  { id: 'geo_map', subject: 'Geography', label: 'ភូមិវិទ្យា (Geography)', rule: 'Questions about maps, climate, and physical geography.', description: 'Geographical knowledge.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Map' },
+  { id: 'civ_moral', subject: 'Moral-Civics', label: 'សីលធម៌-ពលរដ្ឋ (Civics)', rule: 'Questions about ethics, society, and civic duties.', description: 'Moral and civic education.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Heart' },
 ];
 
 const INITIAL_PROTOCOLS: MasterProtocol[] = [
@@ -156,6 +182,8 @@ const INITIAL_STRICT_RULES: StrictRule[] = [
   { id: 'r1', title: 'NO DUPLICATES', description: 'Ensure no two questions are semantically identical.', active: true },
   { id: 'r2', title: 'GRADE APPROPRIATE', description: 'Vocabulary and syntax must match the target grade level.', active: true },
   { id: 'r3', title: 'BALANCED ANSWERS', description: 'Ensure a random but balanced distribution of correct answer keys (A, B, C, D).', active: true },
+  { id: 'r4', title: 'KHMER NAMES POLICY', description: 'Use Khmer names. DO NOT use "មីណា" (Mina). DO NOT use names starting with "មី" (Mi) as it is considered rude.', active: true },
+  { id: 'r5', title: 'MoEYS ALIGNMENT', description: 'Ensure all content and pedagogical style align strictly with the Cambodian MoEYS national curriculum standards.', active: true },
 ];
 const FONT_SIZES = ['10pt', '11pt', '12pt', '14pt', '16pt', '18pt'];
 const KHMER_MCQ_LABELS = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
@@ -255,10 +283,10 @@ const generateTest = async (
   
   const activeProtocols = config.protocols.filter(p => p.active).map(p => `- ${p.title}: ${p.description}`).join('\n');
   const activeRules = config.strictRules.filter(r => r.active).map(r => `- ${r.title}: ${r.description}`).join('\n');
-  const moduleRequirements = config.exerciseConfigs.map(ex => `- ${ex.label} (${ex.id}): Generate EXACTLY ${ex.itemCount} items.`).join('\n');
+  const moduleRequirements = config.exerciseConfigs.map(ex => `- ${ex.label} (${ex.id}): Generate EXACTLY ${ex.itemCount} items. Use "${ex.label}" as the 'module_label' in the JSON response.`).join('\n');
 
   // Calculate total MCQ count and generate balanced keys
-  const mcqModules = ['kh_mcq', 'ma_mcq', 'kh_circle', 'kh_vocab_ng', 'ma_visual_large', 'ma_visual_compact'];
+  const mcqModules = ['kh_mcq', 'ma_mcq', 'kh_vocab', 'kh_grammar', 'kh_spelling'];
   const totalMcqCount = config.exerciseConfigs
     .filter(ex => mcqModules.includes(ex.id))
     .reduce((sum, ex) => sum + ex.itemCount, 0);
@@ -267,7 +295,13 @@ const generateTest = async (
   const keysString = balancedKeys.join(', ');
 
   const prompt = `
-    I HATE SUMMARIES. You are a STRICT MULTI-MODULE GENERATION ENGINE for "MoEYS Khmer Curriculum".
+    I HATE SUMMARIES. You are a STRICT MULTI-MODULE GENERATION ENGINE for the "Cambodian MoEYS National Curriculum".
+    
+    MoEYS STANDARDS & PEDAGOGY:
+    - Grade 1-6 (Primary): Focus on foundational literacy, basic arithmetic, and moral education. Use simple, clear language.
+    - Grade 7-9 (Lower Secondary): Focus on conceptual understanding, problem-solving, and critical analysis.
+    - Grade 10-12 (Upper Secondary): Focus on advanced theory, complex calculations (Physics/Chem/Math), and academic writing.
+    - KHMER STYLE: Use formal Khmer (ភាសាបច្ចេកទេស) for technical terms. Follow the MoEYS textbook structure for questions.
     
     MASTER PROTOCOLS:
     ${activeProtocols}
@@ -278,8 +312,21 @@ const generateTest = async (
     - MANDATORY: For MCQ options, provide ONLY the answer text in the 'options' array. DO NOT include prefixes like 'A.', 'B.', 'ក.', 'ខ.' etc.
     - EXTREME NEAR-MISS DISTRACTORS (CRITICAL): For ALL multiple-choice questions, all options MUST be plausible and potentially correct in some context, but only ONE is the absolute 'best' answer. Example: 'ដើម្បីឱ្យមានមិត្តភក្តិកាន់តែច្រើន យើងគួរតែ ____ ក. ខិតខំរៀនសូត្រ ខ. ជួយពួកគេ និងចែករំលែកអ្វីមួយ គ. និយាយរឿងល្អៗអំពីពួកគេ ឃ. ធ្វើឱ្យពួកគេមានអារម្មណ៍ល្អ' (To have more friends, we should: A. Study hard, B. Help them and share something, C. Speak good things about them, D. Make them feel good). While C and D are good, B is the most direct and 'best' answer in the MoEYS curriculum context. This is MANDATORY to make the test challenging and high-quality.
     - HUMAN-BALANCED ANSWER KEYS (STRICT): You MUST follow this exact sequence of correct answer keys for the MCQ questions in the order they appear: [${keysString}]. For example, if the first key is 'B', the correct answer for the first MCQ question MUST be at index 1 of the options array.
+    - MCQ MODULES: The following modules MUST be generated as MCQ with EXACTLY 4 options: ${mcqModules.join(', ')}.
+    - SOURCE TEXT EXTRACTION (MANDATORY): If a source (image or text) is provided, you MUST extract the FULL, literal text and provide it in the 'source_text' field. DO NOT summarize it.
+    - TOPIC-BASED GENERATION (CRITICAL): When a source is provided, generate a mix of questions:
+        1. Literal: Questions directly answered by the text.
+        2. Contextual/Moral: Questions based on the TOPIC, THEME, or MORAL of the text (e.g., if the text is about a bird and a cow, ask about 'honesty', 'friendship', or 'gratitude' even if those words aren't in the text).
     - COMPACTNESS (CRITICAL): The generated test MUST be space-efficient. Avoid long, wordy questions or options if they can be expressed more concisely. PREFER 'single' or 'double' options_layout for MCQs.
     - VISUAL MATH (CRITICAL): For math questions like "X + Y = ?", the 'image_prompt' MUST specify the EXACT count of items for both X and Y. Example: "4 red apples, a plus sign, 4 red apples...". Use simple, countable objects like apples, mangoes, or pencils.
+    - KHMER MATH STYLE (CRITICAL): For "ma_deep_exp" (Deep Math Explanation), you MUST follow the traditional Khmer MoEYS style for solving problems:
+        1. Use "ដំណោះស្រាយ" (Solution) as the header.
+        2. Use "គេមាន" (Given) to list known values.
+        3. Use "រក" (Find) to state the goal.
+        4. Use "តាមរូបមន្ត" (According to the formula) to state the formula used.
+        5. Show step-by-step calculations with clear logical flow.
+        6. Use "ដូចនេះ" (Therefore) for the final answer, boxed or clearly highlighted.
+        7. Use LaTeX for ALL mathematical expressions and formulas (e.g., $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$).
     - SELECTIVE IMAGE GENERATION (STRICT): Only provide an 'image_prompt' if the question CANNOT be answered without a visual aid (e.g., counting, identifying shapes, visual math). DO NOT generate images for abstract or moral questions.
     - IMAGE RELEVANCE (CRITICAL): The 'image_prompt' MUST be in ENGLISH and provide a literal, detailed description. For math like "4 + 4 = ?", the prompt MUST be: "Educational clipart for kids: 4 red apples, a plus symbol, 4 red apples, an equals sign, and a question mark. High quality, white background, simple style."
     - AVOID KHMER CHARACTERS in 'image_prompt'. Use common objects: apples, mangoes, pencils, watches, balls.
@@ -438,6 +485,26 @@ const generateImage = async (prompt: string, retries = 2) => {
 
 // --- App Component ---
 
+const MathMarkdown = ({ content }: { content: string }) => {
+  if (!content) return null;
+  // Simple regex to find $...$ or $$...$$
+  const parts = content.split(/(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)/g);
+  
+  return (
+    <div className="markdown-body">
+      {parts.map((part, i) => {
+        if (part.startsWith('$$') && part.endsWith('$$')) {
+          return <BlockMath key={i} math={part.slice(2, -2)} />;
+        } else if (part.startsWith('$') && part.endsWith('$')) {
+          return <InlineMath key={i} math={part.slice(1, -1)} />;
+        } else {
+          return <Markdown key={i}>{part}</Markdown>;
+        }
+      })}
+    </div>
+  );
+};
+
 export default function App() {
   const [subject, setSubject] = useState(SUBJECTS[0]);
   const [grade, setGrade] = useState('1');
@@ -450,6 +517,7 @@ export default function App() {
   const [history, setHistory] = useState<TestData[]>([]);
   const [view, setView] = useState<'build' | 'history'>('build');
   const [numberStyle, setNumberStyle] = useState<'Khmer' | 'Roman'>('Khmer');
+  const [showAnswerKeys, setShowAnswerKeys] = useState(false);
   const [font, setFont] = useState(KHMER_FONTS[0]);
   const [fontSize, setFontSize] = useState('12pt');
   const [isExporting, setIsExporting] = useState(false);
@@ -520,6 +588,7 @@ export default function App() {
       
       const config: TestConfig = {
         numberStyle,
+        showAnswerKeys,
         font,
         fontSize,
         exerciseConfigs: selectedExercises,
@@ -650,6 +719,13 @@ export default function App() {
         <h1>${testData.title}</h1>
         <div class="header-meta">Subject: ${testData.subject} | Grade: ${testData.grade} | Language: ${testData.language}</div>
         
+        ${testData.source_text ? `
+          <div style="margin: 30px 0; padding: 20px; background: #f8fafc; border-left: 4px solid #f97316; border-radius: 8px; font-style: italic; line-height: 1.6; color: #334155;">
+            <div style="font-weight: 900; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #f97316; margin-bottom: 10px;">អត្ថបទប្រភព (Source Text)</div>
+            ${testData.source_text}
+          </div>
+        ` : ''}
+
         ${Array.from(new Set(testData.questions.map(q => q.module_label))).map(label => `
           <div class="module-title">${label}</div>
           ${testData.questions.filter(q => q.module_label === label).map((q, i) => `
@@ -701,6 +777,21 @@ export default function App() {
           spacing: { after: 240 },
         }),
       ];
+
+      if (testData.source_text) {
+        children.push(new Paragraph({
+          children: [
+            new TextRun({ text: "អត្ថបទប្រភព (Source Text)", bold: true, color: "f97316", size: 20 }),
+          ],
+          spacing: { before: 240, after: 120 },
+        }));
+        children.push(new Paragraph({
+          children: [
+            new TextRun({ text: testData.source_text, italics: true, color: "334155" }),
+          ],
+          spacing: { after: 240 },
+        }));
+      }
 
       // Group by module
       const modules = Array.from(new Set(testData.questions.map(q => q.module_label)));
@@ -850,7 +941,7 @@ export default function App() {
     }
   };
 
-  const handleDeleteHistory = async (id: number) => {
+  const handleDeleteHistory = async (id: string) => {
     if (!confirm("Are you sure you want to delete this test?")) return;
     try {
       await fetch(`/api/tests/${id}`, { method: 'DELETE' });
@@ -1017,6 +1108,19 @@ export default function App() {
                     </button>
                   </div>
                 </div>
+
+                <div className="flex items-center justify-between p-3 bg-slate-50 border border-slate-200 rounded-xl cursor-pointer hover:bg-slate-100 transition-all" onClick={() => setShowAnswerKeys(!showAnswerKeys)}>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase">Show answer keys</span>
+                  <div className={cn(
+                    "w-10 h-5 rounded-full relative transition-all",
+                    showAnswerKeys ? "bg-brand" : "bg-slate-300"
+                  )}>
+                    <div className={cn(
+                      "absolute top-1 w-3 h-3 bg-white rounded-full transition-all shadow-sm",
+                      showAnswerKeys ? "left-6" : "left-1"
+                    )} />
+                  </div>
+                </div>
               </div>
             </section>
 
@@ -1028,6 +1132,43 @@ export default function App() {
               {isGenerating ? <Loader2 className="animate-spin" size={20} /> : <BrainCircuit size={20} />}
               {isGenerating ? "GENERATING..." : "BUILD TEST"}
             </button>
+
+            <section className="pt-4 border-t border-slate-100 space-y-4">
+              <label className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400">
+                <ExternalLink size={12} />
+                Math Resources
+              </label>
+              <div className="grid grid-cols-1 gap-2">
+                <a 
+                  href="https://keoserey.wordpress.com/%E1%9E%9F%E1%9F%80%E1%9E%9C%E1%9E%97%E1%9F%85%E1%9E%8A%E1%9F%84%E1%9E%93%E1%9E%A1%E1%9E%BC%E1%9E%8F/%E1%9E%82%E1%9E%8E%E1%9E%B7%E1%9E%8F%E1%9E%9C%E1%9E%B7%E1%9E%91%E1%9F%92%E1%9E%99%E1%9E%B6/khmer-maths-books/" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-brand/30 hover:bg-brand/5 transition-all group"
+                >
+                  <div className="p-2 bg-white rounded-lg border border-slate-200 group-hover:border-brand/20 transition-all">
+                    <Book size={14} className="text-slate-400 group-hover:text-brand" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-700 truncate">Khmer Math Books</p>
+                    <p className="text-[8px] text-slate-400 font-medium truncate">keoserey.wordpress.com</p>
+                  </div>
+                </a>
+                <a 
+                  href="https://drive.google.com/drive/folders/1RVqruXlaw-EcyA2Z_xiufcju4gg0QkwU" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-xl hover:border-brand/30 hover:bg-brand/5 transition-all group"
+                >
+                  <div className="p-2 bg-white rounded-lg border border-slate-200 group-hover:border-brand/20 transition-all">
+                    <FolderOpen size={14} className="text-slate-400 group-hover:text-brand" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[10px] font-bold text-slate-700 truncate">Math Source Drive</p>
+                    <p className="text-[8px] text-slate-400 font-medium truncate">Google Drive Folder</p>
+                  </div>
+                </a>
+              </div>
+            </section>
           </div>
         ) : (
           <div className="space-y-4 overflow-y-auto custom-scrollbar pr-2">
@@ -1266,6 +1407,20 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* Source Text Section */}
+                  {testData?.source_text && (
+                    <div className="mb-16 p-8 bg-slate-50 rounded-[2rem] border border-slate-100 relative overflow-hidden">
+                      <div className="absolute top-0 left-0 w-1 h-full bg-brand" />
+                      <div className="flex items-center gap-2 mb-4 text-[10px] font-black uppercase tracking-widest text-brand">
+                        <BookOpen size={14} />
+                        អត្ថបទប្រភព (Source Text)
+                      </div>
+                      <div className="text-lg leading-relaxed text-slate-700 whitespace-pre-wrap font-medium italic">
+                        {testData.source_text}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Questions */}
                   <div className="space-y-16">
                     {Array.from(new Set(testData?.questions.map(q => q.module_label))).map((label, groupIdx) => (
@@ -1276,27 +1431,41 @@ export default function App() {
                           <div className="h-px bg-slate-200 flex-1" />
                         </div>
                         
-                        <div className={cn(
-                          "grid gap-12",
-                          (() => {
-                            const config = testData.config.exerciseConfigs.find(c => c.label === label);
-                            const cols = config?.columns || 1;
-                            if (cols === 1) return "grid-cols-1";
-                            if (cols === 2) return "grid-cols-2";
-                            if (cols === 3) return "grid-cols-3";
-                            if (cols === 4) return "grid-cols-4";
-                            if (cols === 5) return "grid-cols-5";
-                            if (cols === 6) return "grid-cols-6";
-                            return "grid-cols-1";
-                          })()
-                        )}>
+                        <div 
+                          className={cn(
+                            "gap-x-12",
+                            (() => {
+                              const config = testData.config.exerciseConfigs.find(c => c.label === label);
+                              const cols = config?.columns || 1;
+                              if (cols === 1) return "columns-1";
+                              if (cols === 2) return "columns-2";
+                              if (cols === 3) return "columns-3";
+                              if (cols === 4) return "columns-4";
+                              if (cols === 5) return "columns-5";
+                              if (cols === 6) return "columns-6";
+                              return "columns-1";
+                            })()
+                          )}
+                          style={{
+                            columnRule: '1px solid #e2e8f0',
+                            columnGap: '3rem'
+                          }}
+                        >
                           {testData?.questions.filter(q => q.module_label === label).map((q, qIdx) => (
-                            <div key={q.id} className="break-inside-avoid">
+                            <div key={q.id} className={cn(
+                              "break-inside-avoid",
+                              (() => {
+                                const config = testData.config.exerciseConfigs.find(c => c.label === label);
+                                const cols = config?.columns || 1;
+                                // Add border and padding to items that are not in the first column
+                                return qIdx % cols !== 0 ? "pl-12 border-l-2 border-slate-100" : "";
+                              })()
+                            )}>
                               <div className="flex gap-3">
                                 <span className="font-black text-lg text-brand leading-tight">{qIdx + 1}.</span>
                                 <div className="flex-1">
                                   <div className="text-base font-bold leading-snug">
-                                    <Markdown>{q.question}</Markdown>
+                                    <MathMarkdown content={q.question} />
                                   </div>
                                   
                                   {q.image_url && (
@@ -1334,6 +1503,26 @@ export default function App() {
                                           </span>
                                         </div>
                                       ))}
+                                    </div>
+                                  )}
+
+                                  {q.explanation && testData.config.showAnswerKeys && (
+                                    <div className={cn(
+                                      "mt-6 p-6 rounded-2xl border",
+                                      q.type === 'ma_deep_exp' 
+                                        ? "bg-brand/5 border-brand/20 shadow-sm" 
+                                        : "bg-slate-50 border-slate-100"
+                                    )}>
+                                      <div className="flex items-center gap-2 mb-3 text-[10px] font-black uppercase tracking-widest text-brand">
+                                        <FileText size={14} />
+                                        {q.type === 'ma_deep_exp' ? "ដំណោះស្រាយលម្អិត (Detailed Solution)" : "ការពន្យល់ (Explanation)"}
+                                      </div>
+                                      <div className={cn(
+                                        "text-sm leading-relaxed text-slate-700",
+                                        q.type === 'ma_deep_exp' ? "font-medium" : ""
+                                      )}>
+                                        <MathMarkdown content={q.explanation} />
+                                      </div>
                                     </div>
                                   )}
                                 </div>
