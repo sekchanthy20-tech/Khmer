@@ -37,7 +37,8 @@ import {
   FlaskConical,
   Dna,
   Map,
-  Heart
+  Heart,
+  Zap
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import Markdown from 'react-markdown';
@@ -186,6 +187,7 @@ const INITIAL_PROTOCOLS: MasterProtocol[] = [
   { id: 'p2', title: 'PATTERN DESTRUCTION', description: 'ROTATE POLARITY (+/- / ?) AND COMPLEXITY. AVOID REPETITION IN SENTENCE STRUCTURES.', category: 'General', active: true, level: 'Medium' },
   { id: 'p3', title: 'TOPIC DOMINANCE', description: 'THE TOPIC BOX OVERRIDES TEMPLATE DEFAULTS. IF THE TOPIC IS "PAST SIMPLE", ENSURE ALL ITEMS FOCUS ON IT.', category: 'General', active: true, level: 'High' },
   { id: 'p4', title: 'SEMANTIC PRECISION', description: 'ENSURE KHMER TERMINOLOGY MATCHES MoEYS TEXTBOOKS EXACTLY.', category: 'Reading', active: true, level: 'High' },
+  { id: 'p5', title: 'KHMER ORTHOGRAPHIC PRECISION (NEAR-MISS)', description: 'GENERATED DISTRACTORS MUST SHARE AT LEAST 80% VISUAL SIMILARITY WITH THE CORRECT ANSWER IN KHMER SCRIPT. FOCUS ON SUBSCRIPT VARIATIONS, DIACRITIC PLACEMENT, AND HOMOPHONES TO ENSURE ONLY ONE TECHNICALLY CORRECT ANSWER EXISTS WHILE TESTING SPELLING MASTERY.', category: 'General', active: true, level: 'High' },
 ];
 
 const INITIAL_STRICT_RULES: StrictRule[] = [
@@ -197,6 +199,28 @@ const INITIAL_STRICT_RULES: StrictRule[] = [
 ];
 const FONT_SIZES = ['10pt', '11pt', '12pt', '14pt', '16pt', '18pt'];
 const KHMER_MCQ_LABELS = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
+
+interface BrandSettings {
+  schoolName: string;
+  schoolAddress: string;
+  fontSize: number;
+  fontWeight: string;
+  letterSpacing: number;
+  textTransform: string;
+  logoWidth: number;
+  logoData: string;
+}
+
+const DEFAULT_BRAND_SETTINGS: BrandSettings = {
+  schoolName: "DPSS ULTIMATE TEST BUILDER",
+  schoolAddress: "Developing Potential for Success School",
+  fontSize: 12,
+  fontWeight: "800",
+  letterSpacing: 0,
+  textTransform: "none",
+  logoWidth: 300,
+  logoData: ""
+};
 
 const getOptionLabel = (index: number, style: 'Khmer' | 'Roman') => {
   if (style === 'Khmer') {
@@ -535,12 +559,24 @@ export default function App() {
   const [protocols, setProtocols] = useState<MasterProtocol[]>(INITIAL_PROTOCOLS);
   const [strictRules, setStrictRules] = useState<StrictRule[]>(INITIAL_STRICT_RULES);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [settingsTab, setSettingsTab] = useState<'Backbone Logic' | 'General' | 'Engine' | 'Exercises'>('Backbone Logic');
+  const [settingsTab, setSettingsTab] = useState<'Backbone Logic' | 'General' | 'Engine' | 'Exercises' | 'Design'>('Backbone Logic');
   const [protocolCategory, setProtocolCategory] = useState<'General' | 'Grammar' | 'Vocabulary' | 'Reading'>('General');
+  const [brandSettings, setBrandSettings] = useState<BrandSettings>(() => {
+    try {
+      const saved = localStorage.getItem('dp_brand_v46');
+      return saved ? JSON.parse(saved) : DEFAULT_BRAND_SETTINGS;
+    } catch (e) {
+      return DEFAULT_BRAND_SETTINGS;
+    }
+  });
 
   useEffect(() => {
     fetchHistory();
   }, []);
+
+  useEffect(() => {
+    localStorage.setItem('dp_brand_v46', JSON.stringify(brandSettings));
+  }, [brandSettings]);
 
   const fetchHistory = async () => {
     try {
@@ -771,7 +807,55 @@ export default function App() {
     if (!testData) return;
     setIsExporting(true);
     try {
-      const children: any[] = [
+      const children: any[] = [];
+
+      // Add Branding Header
+      if (brandSettings.logoData) {
+        try {
+          const response = await fetch(brandSettings.logoData);
+          const blob = await response.blob();
+          const arrayBuffer = await blob.arrayBuffer();
+          
+          children.push(new Paragraph({
+            children: [
+              new ImageRun({
+                data: arrayBuffer,
+                transformation: { width: brandSettings.logoWidth, height: (brandSettings.logoWidth / 2) }, // Approximate aspect ratio
+              } as any),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 120 },
+          }));
+
+          children.push(new Paragraph({
+            children: [
+              new TextRun({ 
+                text: brandSettings.schoolName, 
+                bold: true, 
+                size: (brandSettings.fontSize + 4) * 2,
+                allCaps: true 
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+          }));
+
+          children.push(new Paragraph({
+            children: [
+              new TextRun({ 
+                text: brandSettings.schoolAddress, 
+                size: 20,
+                color: "64748b"
+              }),
+            ],
+            alignment: AlignmentType.CENTER,
+            spacing: { after: 240 },
+          }));
+        } catch (e) {
+          console.error("Logo export error for DOCX:", e);
+        }
+      }
+
+      children.push(
         new Paragraph({
           text: testData.title,
           heading: HeadingLevel.HEADING_1,
@@ -786,8 +870,8 @@ export default function App() {
           ],
           alignment: AlignmentType.CENTER,
           spacing: { after: 240 },
-        }),
-      ];
+        })
+      );
 
       if (testData.source_text) {
         children.push(new Paragraph({
@@ -801,6 +885,7 @@ export default function App() {
             new TextRun({ text: testData.source_text, italics: true, color: "334155" }),
           ],
           spacing: { after: 240 },
+          indent: { left: 400, right: 400 },
         }));
       }
 
@@ -821,6 +906,7 @@ export default function App() {
               new TextRun({ text: q.question }),
             ],
             spacing: { before: 120, after: 60 },
+            indent: { left: 400, hanging: 400 },
           }));
 
           if (q.image_url) {
@@ -845,49 +931,48 @@ export default function App() {
 
           if (q.options) {
             if (q.options_layout === 'single') {
-              // All options in one row using a table for perfect alignment
-              const cells = q.options.map((opt, optIdx) => new TableCell({
-                children: [new Paragraph({
-                  children: [
-                    new TextRun({ text: `${getOptionLabel(optIdx, testData.config.numberStyle)}. `, bold: true, color: "f97316" }),
-                    new TextRun({ text: cleanOptionText(opt) }),
-                  ],
-                  spacing: { after: 0 },
-                })],
-                borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
-              }));
-
-              children.push(new Table({
-                rows: [new TableRow({ children: cells })],
-                width: { size: 100, type: WidthType.PERCENTAGE },
-                borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
+              const textParts: TextRun[] = [];
+              q.options.forEach((opt, optIdx) => {
+                if (optIdx > 0) {
+                  textParts.push(new TextRun({ text: " ".repeat(15) }));
+                }
+                textParts.push(new TextRun({ text: `${getOptionLabel(optIdx, testData.config.numberStyle)}. `, bold: true, color: "f97316" }));
+                textParts.push(new TextRun({ text: cleanOptionText(opt) }));
+              });
+              children.push(new Paragraph({
+                children: textParts,
+                indent: { left: 700 }, // ~7 spaces
+                spacing: { after: 120 },
               }));
             } else if (q.options_layout === 'double') {
-              // 2x2 grid using a table
+              // 2x2 grid using a table (Vertical-first: A-C, B-D)
+              const half = Math.ceil(q.options.length / 2);
               const rows: TableRow[] = [];
-              for (let idx = 0; idx < q.options.length; idx += 2) {
+              for (let i = 0; i < half; i++) {
                 const cells = [
                   new TableCell({
                     children: [new Paragraph({
                       children: [
-                        new TextRun({ text: `${getOptionLabel(idx, testData.config.numberStyle)}. `, bold: true, color: "f97316" }),
-                        new TextRun({ text: cleanOptionText(q.options[idx]) }),
+                        new TextRun({ text: `${getOptionLabel(i, testData.config.numberStyle)}. `, bold: true, color: "f97316" }),
+                        new TextRun({ text: cleanOptionText(q.options[i]) }),
                       ],
                       spacing: { after: 0 },
                     })],
                     borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                    width: { size: 45, type: WidthType.PERCENTAGE },
                   })
                 ];
-                if (q.options[idx + 1]) {
+                if (q.options[i + half]) {
                   cells.push(new TableCell({
                     children: [new Paragraph({
                       children: [
-                        new TextRun({ text: `${getOptionLabel(idx + 1, testData.config.numberStyle)}. `, bold: true, color: "f97316" }),
-                        new TextRun({ text: cleanOptionText(q.options[idx + 1]) }),
+                        new TextRun({ text: `${getOptionLabel(i + half, testData.config.numberStyle)}. `, bold: true, color: "f97316" }),
+                        new TextRun({ text: cleanOptionText(q.options[i + half]) }),
                       ],
                       spacing: { after: 0 },
                     })],
                     borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } },
+                    width: { size: 45, type: WidthType.PERCENTAGE },
                   }));
                 } else {
                   cells.push(new TableCell({ children: [], borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE } } }));
@@ -897,6 +982,7 @@ export default function App() {
               children.push(new Table({
                 rows,
                 width: { size: 100, type: WidthType.PERCENTAGE },
+                indent: { size: 700, type: WidthType.DXA }, // ~7 spaces
                 borders: { top: { style: BorderStyle.NONE }, bottom: { style: BorderStyle.NONE }, left: { style: BorderStyle.NONE }, right: { style: BorderStyle.NONE }, insideHorizontal: { style: BorderStyle.NONE }, insideVertical: { style: BorderStyle.NONE } },
               }));
             } else {
@@ -908,6 +994,7 @@ export default function App() {
                     new TextRun({ text: cleanOptionText(opt) }),
                   ],
                   spacing: { after: 40 },
+                  indent: { left: 700 }, // ~7 spaces
                 }));
               });
             }
@@ -968,15 +1055,32 @@ export default function App() {
       {/* Sidebar */}
       <aside className="w-full md:w-80 bg-white border-r border-slate-200 p-6 flex flex-col gap-6 overflow-y-auto max-h-screen sticky top-0 z-30">
         <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-brand rounded-xl text-white shadow-lg shadow-brand/20">
-              <BrainCircuit size={24} />
+          {brandSettings.logoData ? (
+            <div className="flex flex-col items-center p-4 w-full">
+              <img 
+                src={brandSettings.logoData} 
+                alt="School Logo" 
+                className="mb-4 rounded-lg shadow-lg" 
+                style={{ width: '100%', maxWidth: `${brandSettings.logoWidth}px` }} 
+              />
+              <h1 className="text-slate-900 font-black uppercase tracking-tight text-center" style={{ fontSize: `${brandSettings.fontSize}px`, fontWeight: brandSettings.fontWeight }}>
+                {brandSettings.schoolName}
+              </h1>
+              <p className="text-[10px] text-slate-400 text-center">
+                {brandSettings.schoolAddress}
+              </p>
             </div>
-            <div>
-              <h1 className="font-black text-xl tracking-tight leading-none">TestBuilder</h1>
-              <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">MoEYS Standard AI</p>
+          ) : (
+            <div className="flex items-center gap-3">
+              <div className="h-12 w-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-600/20">
+                <Zap className="text-white" size={24} />
+              </div>
+              <div>
+                <h1 className="font-black text-xl tracking-tight leading-none">TestBuilder</h1>
+                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">MoEYS Standard AI</p>
+              </div>
             </div>
-          </div>
+          )}
           <button 
             onClick={() => setIsSettingsOpen(true)}
             className="p-2 text-slate-400 hover:text-brand hover:bg-brand/5 rounded-xl transition-all"
@@ -1398,9 +1502,25 @@ export default function App() {
                 >
                   {/* Header */}
                   <div className="text-center space-y-10 mb-16">
+                    {brandSettings.logoData && (
+                      <div className="flex flex-col items-center mb-6">
+                        <img 
+                          src={brandSettings.logoData} 
+                          alt="School Logo" 
+                          className="mb-4" 
+                          style={{ width: '100%', maxWidth: `${brandSettings.logoWidth}px` }} 
+                        />
+                        <h2 className="text-slate-900 font-black uppercase tracking-tight text-center" style={{ fontSize: `${brandSettings.fontSize + 4}px`, fontWeight: brandSettings.fontWeight }}>
+                          {brandSettings.schoolName}
+                        </h2>
+                        <p className="text-xs text-slate-400 text-center font-bold">
+                          {brandSettings.schoolAddress}
+                        </p>
+                      </div>
+                    )}
                     <div className="flex justify-between items-start text-sm">
                       <div className="text-left space-y-2">
-                        <p className="font-bold">សាលារៀន: .........................................................</p>
+                        <p className="font-bold">សាលារៀន: {brandSettings.logoData ? brandSettings.schoolName : "........................................................."}</p>
                         <p className="font-bold">ឈ្មោះសិស្ស: .........................................................</p>
                       </div>
                       <div className="text-right space-y-2">
@@ -1492,19 +1612,21 @@ export default function App() {
                                     </div>
                                   )}
                                   {q.options && (
-                                    <div className={cn(
-                                      "mt-3",
-                                      q.options_layout === 'single' ? "flex flex-wrap gap-x-6 gap-y-0.5" : 
-                                      q.options_layout === 'double' ? "grid grid-cols-2 gap-3" : 
-                                      "flex flex-col gap-2"
-                                    )}>
+                                    <div 
+                                      className={cn(
+                                        "mt-2",
+                                        q.options_layout === 'single' ? "flex flex-wrap gap-x-[15ch] pl-[7ch]" : 
+                                        q.options_layout === 'double' ? "grid grid-cols-2 grid-flow-col gap-x-[15ch] gap-y-1 pl-[7ch]" : 
+                                        "flex flex-col gap-1 pl-[7ch]"
+                                      )}
+                                      style={q.options_layout === 'double' ? { 
+                                        gridTemplateRows: `repeat(${Math.ceil(q.options.length / 2)}, minmax(0, 1fr))` 
+                                      } : {}}
+                                    >
                                       {q.options.map((opt, optIdx) => (
                                         <div 
                                           key={optIdx} 
-                                          className={cn(
-                                            "flex items-center gap-2",
-                                            q.options_layout !== 'single' && "px-3 py-1.5 bg-slate-50/80 rounded-xl border border-slate-100 transition-colors hover:bg-slate-100"
-                                          )}
+                                          className="flex items-center gap-2"
                                         >
                                           <span className="font-black text-brand text-sm">
                                             {getOptionLabel(optIdx, testData.config.numberStyle)}.
@@ -1597,11 +1719,13 @@ export default function App() {
                     onClick={() => {
                       if (tab === 'BACKBONE LOGIC') setSettingsTab('Backbone Logic');
                       if (tab === 'ENGINE') setSettingsTab('Exercises');
+                      if (tab === 'DESIGN') setSettingsTab('Design');
                     }}
                     className={cn(
                       "px-6 py-2 rounded-full text-[10px] font-black tracking-widest transition-all",
                       (settingsTab === 'Backbone Logic' && tab === 'BACKBONE LOGIC') ||
-                      (settingsTab === 'Exercises' && tab === 'ENGINE')
+                      (settingsTab === 'Exercises' && tab === 'ENGINE') ||
+                      (settingsTab === 'Design' && tab === 'DESIGN')
                         ? "bg-brand text-white shadow-lg shadow-brand/20"
                         : "text-slate-400 hover:text-slate-600"
                     )}
@@ -1720,6 +1844,103 @@ export default function App() {
                             </div>
                           </div>
                         ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {settingsTab === 'Design' && (
+                  <div className="space-y-10">
+                    <div className="space-y-6">
+                      <h3 className="text-xs font-black uppercase tracking-[0.2em] text-orange-600">Branding & Identity</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase">School Name</label>
+                            <input 
+                              type="text"
+                              value={brandSettings.schoolName}
+                              onChange={(e) => setBrandSettings(prev => ({ ...prev, schoolName: e.target.value }))}
+                              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-brand/10 outline-none"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-black text-slate-400 uppercase">School Address</label>
+                            <input 
+                              type="text"
+                              value={brandSettings.schoolAddress}
+                              onChange={(e) => setBrandSettings(prev => ({ ...prev, schoolAddress: e.target.value }))}
+                              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-brand/10 outline-none"
+                            />
+                          </div>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black text-slate-400 uppercase">Logo Width (px)</label>
+                              <input 
+                                type="number"
+                                value={brandSettings.logoWidth}
+                                onChange={(e) => setBrandSettings(prev => ({ ...prev, logoWidth: parseInt(e.target.value) || 0 }))}
+                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-brand/10 outline-none"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <label className="text-[10px] font-black text-slate-400 uppercase">Font Size (pt)</label>
+                              <input 
+                                type="number"
+                                value={brandSettings.fontSize}
+                                onChange={(e) => setBrandSettings(prev => ({ ...prev, fontSize: parseInt(e.target.value) || 0 }))}
+                                className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold focus:ring-4 focus:ring-brand/10 outline-none"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="space-y-4">
+                          <label className="text-[10px] font-black text-slate-400 uppercase">School Logo</label>
+                          <div className="flex flex-col items-center gap-4 p-6 border-2 border-dashed border-slate-200 rounded-3xl bg-slate-50/50">
+                            {brandSettings.logoData ? (
+                              <div className="relative group">
+                                <img 
+                                  src={brandSettings.logoData} 
+                                  alt="Logo Preview" 
+                                  className="max-h-40 rounded-xl shadow-lg"
+                                />
+                                <button 
+                                  onClick={() => setBrandSettings(prev => ({ ...prev, logoData: "" }))}
+                                  className="absolute -top-2 -right-2 p-1 bg-red-500 text-white rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X size={14} />
+                                </button>
+                              </div>
+                            ) : (
+                              <div className="text-center space-y-2">
+                                <Upload className="mx-auto text-slate-300" size={32} />
+                                <p className="text-[10px] font-bold text-slate-400">Upload your school logo (PNG/JPG)</p>
+                              </div>
+                            )}
+                            <input 
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) {
+                                  const reader = new FileReader();
+                                  reader.onload = () => {
+                                    setBrandSettings(prev => ({ ...prev, logoData: reader.result as string }));
+                                  };
+                                  reader.readAsDataURL(file);
+                                }
+                              }}
+                              className="hidden"
+                              id="logo-upload"
+                            />
+                            <label 
+                              htmlFor="logo-upload"
+                              className="px-6 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-black tracking-widest cursor-pointer hover:bg-slate-50 transition-all"
+                            >
+                              {brandSettings.logoData ? "CHANGE LOGO" : "SELECT LOGO"}
+                            </label>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </div>

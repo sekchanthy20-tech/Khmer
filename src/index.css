@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+:root {
+    --primary-orange: #ea580c;
+    --sidebar-navy: #0b1221;
+    --accent-orange-dark: #ea580c;
+}
+
 @theme {
   --color-brand: #F27D26;
   --color-bg-light: #F8F9FA;
