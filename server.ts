@@ -1,23 +1,30 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
+import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Mock database for Vercel (read-only filesystem)
-const db = {
-  prepare: () => ({ 
-    all: () => [], 
-    run: () => ({ lastInsertRowid: Date.now() }) 
-  }),
-  exec: () => {}
-} as any;
+const db = new Database("tests.db");
 
-export const app = express();
+// Initialize database
+db.exec(`
+  CREATE TABLE IF NOT EXISTS tests (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    subject TEXT NOT NULL,
+    grade TEXT NOT NULL,
+    language TEXT,
+    config TEXT,
+    content TEXT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
 
 async function startServer() {
+  const app = express();
   const PORT = 3000;
 
   app.use(express.json({ limit: '50mb' }));
@@ -61,18 +68,15 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    const distPath = path.join(__dirname, "../dist");
-    app.use(express.static(distPath));
+    app.use(express.static(path.join(__dirname, "dist")));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(distPath, "index.html"));
+      res.sendFile(path.join(__dirname, "dist/index.html"));
     });
   }
 
-  if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
-    app.listen(PORT, "0.0.0.0", () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  }
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 }
 
 startServer();
