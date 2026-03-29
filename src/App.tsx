@@ -149,7 +149,7 @@ const INITIAL_EXERCISE_TYPES: ExerciseConfig[] = [
   { id: 'kh_spelling', subject: 'Khmer', label: 'អក្ខរាវិរុទ្ធ (Spelling)', rule: 'Identify correctly spelled words or correct spelling errors.', description: 'Orthography and spelling.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'PenTool' },
   { id: 'kh_writing', subject: 'Khmer', label: 'សំណេរ (Writing)', rule: 'Short writing prompts, sentence construction, or paragraph completion.', description: 'Composition and creative writing.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'Edit3' },
   { id: 'kh_mcq', subject: 'Khmer', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Standard multiple choice questions with 4 options.', description: 'General multiple choice.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
-  { id: 'kh_ct', subject: 'Khmer', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Exercises about ending sentences, MCQ, Circle the correct answer, logic and pattern completion. NOT open-ended discussion.', description: 'Logic and pattern completion.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'kh_ct', subject: 'Khmer', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Language-based logic: ending sentences, identifying word patterns, circling correct grammar usage, and logical sentence ordering. NOT math or open-ended discussion.', description: 'Language logic and patterns.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
   { id: 'kh_ans', subject: 'Khmer', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Comprehension questions requiring written answers based on text or general knowledge.', description: 'Standard question and answer format.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
   { id: 'kh_disc', subject: 'Khmer', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions for classroom discussion or debate.', description: 'Discussion and debate questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'kh_fib', subject: 'Khmer', label: 'បំពេញល្បះ (Fill-in-blank)', rule: 'Complete sentences by filling in missing words or phrases.', description: 'Sentence completion.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Minus' },
@@ -373,10 +373,17 @@ const generateTest = async (
   const prompt = `
     YOU ARE A COMPLETIONIST ENGINE for the "Cambodian MoEYS National Curriculum". YOU NEVER SKIP ITEMS. YOU NEVER SUMMARIZE. YOU ALWAYS GENERATE THE FULL REQUESTED QUANTITY.
     
+    SUBJECT ISOLATION (STRICT):
+    - The current subject is ${subject}. 
+    - MANDATORY: You MUST ONLY generate content related to ${subject}. 
+    - DO NOT include math problems, scientific formulas, or historical facts unless they are explicitly part of the ${subject} curriculum for Grade ${grade}.
+    - If the subject is Khmer, focus on literacy, grammar, and literature. DO NOT leak math or science into Khmer tests.
+    - NO CROSS-SUBJECT LEAKAGE: Do not use mathematical equations or number patterns in non-math subjects.
+    
     MoEYS STANDARDS & PEDAGOGY:
-    - Grade 1-6 (Primary): Focus on foundational literacy, basic arithmetic, and moral education. Use simple, clear language.
-    - Grade 7-9 (Lower Secondary): Focus on conceptual understanding, problem-solving, and critical analysis.
-    - Grade 10-12 (Upper Secondary): Focus on advanced theory, complex calculations (Physics/Chem/Math), and academic writing.
+    - Grade 1-6 (Primary): Focus on foundational literacy (Khmer), basic arithmetic (Math), and moral education (Civics). Use simple, clear language appropriate for the selected subject.
+    - Grade 7-9 (Lower Secondary): Focus on conceptual understanding, problem-solving, and critical analysis within the domain of ${subject}.
+    - Grade 10-12 (Upper Secondary): Focus on advanced theory, complex calculations (if Math/Physics/Chem), and academic writing (if Khmer/English).
     - KHMER STYLE: Use formal Khmer (ភាសាបច្ចេកទេស) for technical terms. Follow the MoEYS textbook structure for questions.
     
     MASTER PROTOCOLS:
@@ -395,12 +402,13 @@ const generateTest = async (
         2. Contextual/Moral: Questions based on the TOPIC, THEME, or MORAL of the text (e.g., if the text is about a bird and a cow, ask about 'honesty', 'friendship', or 'gratitude' even if those words aren't in the text).
     - COMPACTNESS (CRITICAL): The generated test MUST be space-efficient. Avoid long, wordy questions or options if they can be expressed more concisely. PREFER 'single' or 'double' options_layout for MCQs.
     - NO DUPLICATES (STRICT): Every single question MUST be unique. DO NOT repeat the same question or very similar questions within the same module or across different modules. Use different numbers, scenarios, and contexts for each item. If you generate 10 math questions, they MUST use 10 different sets of numbers.
-    - CRITICAL THINKING (NEW DEFINITION): For any module with "ct" in its ID (Critical Thinking), generate logic-based exercises such as:
-        1. Sentence Completion: Ending a sentence logically.
-        2. Pattern Recognition: Identifying the next item in a sequence.
-        3. Visual Logic: If an image_prompt is used, identify shapes or patterns.
-        4. MCQ/Circle: Multiple choice questions where the student must "circle" the correct answer.
+    - CRITICAL THINKING (NEW DEFINITION): For any module with "ct" in its ID (Critical Thinking), generate logic-based exercises tailored to ${subject}:
+        1. Language (Khmer/English): Sentence completion, word patterns, logical sentence ordering, identifying correct usage.
+        2. Math: Numerical patterns, logic puzzles, sequence completion.
+        3. Science (Physics/Chem/Bio): Experimental logic, cause-effect patterns, identifying correct scientific principles.
+        4. Social Studies (History/Geo/Civics): Timeline logic, cause-effect relationships, moral dilemma logic.
         MANDATORY: These are NOT open-ended discussion questions. They MUST have a clear, objective correct answer.
+    ${subject === 'Math' ? `
     - VISUAL MATH (CRITICAL): For math questions like "X + Y = ?", the 'image_prompt' MUST specify the EXACT count of items for both X and Y. Example: "4 red apples, a plus sign, 4 red apples...". Use simple, countable objects like apples, mangoes, or pencils.
     - KHMER MATH STYLE (CRITICAL): For "ma_deep_exp" (Deep Math Explanation), you MUST follow the traditional Khmer MoEYS style for solving problems:
         1. Use "ដំណោះស្រាយ" (Solution) as the header.
@@ -410,9 +418,11 @@ const generateTest = async (
         5. Show step-by-step calculations with clear logical flow.
         6. Use "ដូចនេះ" (Therefore) for the final answer, boxed or clearly highlighted.
         7. Use LaTeX for ALL mathematical expressions and formulas (e.g., $x = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}$).
+    ` : ''}
     - DISCUSSION QUESTIONS (NEW): For any module with "disc" in its ID (Discussion), generate open-ended, thought-provoking questions that encourage critical thinking and classroom debate. Example: "តើយើងអាចបង្កើតមិត្តភក្តិឱ្យបានកាន់តែច្រើននៅក្នុងសាលារៀនដោយរបៀបណា?" (How can we make more friends at school?). These questions should NOT have MCQ options.
     - SELECTIVE IMAGE GENERATION (STRICT): Only provide an 'image_prompt' if the question CANNOT be answered without a visual aid (e.g., counting, identifying shapes, visual math). DO NOT generate images for abstract or moral questions.
-    - IMAGE RELEVANCE (CRITICAL): The 'image_prompt' MUST be in ENGLISH and provide a literal, detailed description. For math like "4 + 4 = ?", the prompt MUST be: "Educational clipart for kids: 4 red apples, a plus symbol, 4 red apples, an equals sign, and a question mark. High quality, white background, simple style."
+    - IMAGE RELEVANCE (CRITICAL): The 'image_prompt' MUST be in ENGLISH and provide a literal, detailed description. 
+      ${subject === 'Math' ? 'For math like "4 + 4 = ?", the prompt MUST be: "Educational clipart for kids: 4 red apples, a plus symbol, 4 red apples, an equals sign, and a question mark. High quality, white background, simple style."' : 'For a question about a bird, the prompt MUST be: "A simple, colorful clipart of a small bird sitting on a tree branch. High quality, white background, child-friendly style."'}
     - AVOID KHMER CHARACTERS in 'image_prompt'. Use common objects: apples, mangoes, pencils, watches, balls.
     - For MCQ questions, specify 'options_layout' as 'single' (all on one line, very compact), 'double' (2x2 grid), or 'vertical' (one per line) based on the length of the options. PREFER 'single' or 'double' to save vertical space on the test paper.
     - Use 'layout_columns' to specify the number of columns for the exercise part (1 to 6).
