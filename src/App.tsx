@@ -3,6 +3,7 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { 
   Upload, 
   FileText, 
+  Table as TableIcon,
   BrainCircuit, 
   Download, 
   Trash2, 
@@ -881,6 +882,27 @@ export default function App() {
     saveAs(blob, `${testData.title.replace(/\s+/g, '_')}.html`);
   };
 
+  const exportToCSV = () => {
+    if (!testData) return;
+    
+    const headers = ["Question ID", "Module Label", "Question", "Options", "Answer"];
+    const rows = testData.questions.map(q => [
+      q.id,
+      q.module_label,
+      q.question.replace(/"/g, '""'),
+      q.options ? q.options.map(opt => opt.replace(/"/g, '""')).join('; ') : '',
+      q.answer.replace(/"/g, '""')
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...rows.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `${testData.title.replace(/\s+/g, '_')}.csv`);
+  };
+
   const exportToDocx = async () => {
     if (!testData) return;
     setIsExporting(true);
@@ -1584,6 +1606,13 @@ export default function App() {
                   >
                     <Share2 size={18} />
                     HTML
+                  </button>
+                  <button 
+                    onClick={exportToCSV} 
+                    className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-6 py-3 bg-slate-100 text-slate-700 font-black rounded-2xl hover:bg-slate-200 transition-all text-xs"
+                  >
+                    <TableIcon size={18} />
+                    CSV
                   </button>
                   <button 
                     onClick={exportToPDF} 
