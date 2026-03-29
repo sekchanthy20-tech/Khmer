@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: tests
+    // Document ID: auto-generated
+    // Fields:
+    //   - title: string (required) - The title of the test.
+    //   - subject: string (required) - The subject of the test.
+    //   - grade: string (required) - The grade level.
+    //   - language: string (optional) - The language.
+    //   - config: map (optional) - The configuration.
+    //   - questions: list (required) - The list of questions.
+    //   - sourceText: string (optional) - The source text.
+    //   - uid: string (required) - The UID of the creator.
+    //   - created_at: string (required) - ISO 8601 timestamp.
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          (request.auth.token.email == "sekchanthy2.0@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isValidTest(data) {
+      return data.keys().hasAll(['title', 'subject', 'grade', 'questions', 'uid', 'created_at']) &&
+             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
+             data.subject is string && data.grade is string &&
+             data.questions is list && data.questions.size() <= 100 &&
+             data.uid is string && data.uid == request.auth.uid &&
+             data.created_at is string;
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isAdmin();
+      allow create: if isAuthenticated() && isOwner(userId) && request.resource.data.role == 'user';
+      allow update: if isAuthenticated() && (isOwner(userId) && request.resource.data.role == resource.data.role) || isAdmin();
+    }
+
+    match /tests/{testId} {
+      allow read: if isDocOwner() || isAdmin();
+      allow create: if isAuthenticated() && isValidTest(request.resource.data);
+      allow update: if isAuthenticated() && isDocOwner() && isValidTest(request.resource.data) && request.resource.data.uid == resource.data.uid;
+      allow delete: if isDocOwner() || isAdmin();
+    }
+  }
+}

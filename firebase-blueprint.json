@@ -1,0 +1,27 @@
+{
+  "entities": {
+    "test": {
+      "title": "Test",
+      "description": "A generated test with questions and configuration.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The title of the test." },
+        "subject": { "type": "string", "description": "The subject of the test (e.g., Khmer, Math)." },
+        "grade": { "type": "string", "description": "The grade level of the test." },
+        "language": { "type": "string", "description": "The language of the test." },
+        "config": { "type": "object", "description": "The configuration used to generate the test." },
+        "questions": { "type": "array", "description": "The list of generated questions." },
+        "sourceText": { "type": "string", "description": "The source text used for generation." },
+        "uid": { "type": "string", "description": "The UID of the user who created the test." },
+        "created_at": { "type": "string", "format": "date-time", "description": "The timestamp when the test was created." }
+      },
+      "required": ["title", "subject", "grade", "questions", "uid", "created_at"]
+    }
+  },
+  "firestore": {
+    "/tests/{testId}": {
+      "schema": "test",
+      "description": "Collection of generated tests."
+    }
+  }
+}

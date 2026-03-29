@@ -39,7 +39,8 @@ import {
   Dna,
   Map,
   Heart,
-  Zap
+  Zap,
+  User as UserIcon
 } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import Markdown from 'react-markdown';
@@ -52,6 +53,24 @@ import { saveAs } from 'file-saver';
 import { motion, AnimatePresence } from 'motion/react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { 
+  auth, 
+  db, 
+  signInWithGoogle, 
+  logout, 
+  onAuthStateChanged, 
+  collection, 
+  doc, 
+  setDoc, 
+  deleteDoc, 
+  query, 
+  where, 
+  orderBy, 
+  onSnapshot,
+  handleFirestoreError,
+  OperationType,
+  type User
+} from './firebase';
 
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -523,6 +542,55 @@ const generateImage = async (prompt: string, retries = 2) => {
   return null;
 };
 
+// --- Error Boundary ---
+
+class ErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: any }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: any) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: any, errorInfo: any) {
+    console.error("ErrorBoundary caught an error", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      let displayMessage = "Something went wrong.";
+      try {
+        const parsed = JSON.parse(this.state.error.message);
+        if (parsed.error) displayMessage = `Firestore Error: ${parsed.error}`;
+      } catch (e) {
+        displayMessage = this.state.error.message || displayMessage;
+      }
+
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+          <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-red-100">
+            <div className="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h2 className="text-2xl font-bold text-slate-900 mb-2">Application Error</h2>
+            <p className="text-slate-600 mb-6">{displayMessage}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="w-full py-3 px-4 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-colors"
+            >
+              Reload Application
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    return this.props.children;
+  }
+}
+
 // --- App Component ---
 
 const MathMarkdown = ({ content }: { content: string }) => {
@@ -546,6 +614,8 @@ const MathMarkdown = ({ content }: { content: string }) => {
 };
 
 export default function App() {
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthReady, setIsAuthReady] = useState(false);
   const [subject, setSubject] = useState(SUBJECTS[0]);
   const [grade, setGrade] = useState('1');
   const [language, setLanguage] = useState(LANGUAGES[1]); // Khmer
@@ -577,8 +647,37 @@ export default function App() {
   });
 
   useEffect(() => {
-    fetchHistory();
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setIsAuthReady(true);
+    });
+    return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!isAuthReady || !user) {
+      setHistory([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'tests'),
+      where('uid', '==', user.uid),
+      orderBy('created_at', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as any[];
+      setHistory(data);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'tests');
+    });
+
+    return () => unsubscribe();
+  }, [isAuthReady, user]);
 
   useEffect(() => {
     localStorage.setItem('dp_brand_v46', JSON.stringify(brandSettings));
@@ -699,20 +798,25 @@ export default function App() {
       setTestData(newTestData);
       if (window.innerWidth < 768) setIsSidebarOpen(false);
       
-      await fetch('/api/tests', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          title: newTestData.title,
-          subject,
-          grade,
-          language,
-          config,
-          content: newTestData.questions
-        })
-      });
+      if (user) {
+        const testId = doc(collection(db, 'tests')).id;
+        try {
+          await setDoc(doc(db, 'tests', testId), {
+            title: newTestData.title,
+            subject,
+            grade,
+            language,
+            config: JSON.parse(JSON.stringify(config)), // Ensure plain object
+            questions: JSON.parse(JSON.stringify(questionsWithImages)),
+            sourceText: result.source_text || '',
+            uid: user.uid,
+            created_at: new Date().toISOString()
+          });
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, `tests/${testId}`);
+        }
+      }
       
-      fetchHistory();
     } catch (error: any) {
       alert(error.message);
     } finally {
@@ -1056,16 +1160,16 @@ export default function App() {
   const handleDeleteHistory = async (id: string) => {
     if (!confirm("Are you sure you want to delete this test?")) return;
     try {
-      await fetch(`/api/tests/${id}`, { method: 'DELETE' });
-      fetchHistory();
+      await deleteDoc(doc(db, 'tests', id));
       if (testData?.id === id) setTestData(null);
     } catch (error) {
-      alert("Failed to delete test.");
+      handleFirestoreError(error, OperationType.DELETE, `tests/${id}`);
     }
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-900">
+    <ErrorBoundary>
+      <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-900">
       {/* Mobile Header Toggle */}
       <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40">
         <div className="flex items-center gap-2">
@@ -1087,39 +1191,78 @@ export default function App() {
         "fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-slate-200 p-6 flex flex-col gap-6 overflow-y-auto transition-transform duration-300 md:relative md:translate-x-0 md:z-30 md:max-h-screen md:sticky",
         isSidebarOpen ? "translate-x-0" : "-translate-x-full"
       )}>
-        <div className="flex items-center justify-between mb-2">
-          {brandSettings.logoData ? (
-            <div className="flex flex-col items-center p-4 w-full">
-              <img 
-                src={brandSettings.logoData} 
-                alt="School Logo" 
-                className="mb-4 rounded-lg shadow-lg" 
-                style={{ width: '100%', maxWidth: `${brandSettings.logoWidth}px` }} 
-              />
-              <h1 className="text-slate-900 font-black uppercase tracking-tight text-center" style={{ fontSize: `${brandSettings.fontSize}px`, fontWeight: brandSettings.fontWeight }}>
-                {brandSettings.schoolName}
-              </h1>
-              <p className="text-[10px] text-slate-400 text-center">
-                {brandSettings.schoolAddress}
-              </p>
-            </div>
-          ) : (
-            <div className="flex items-center gap-3">
-              <div className="h-12 w-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-600/20">
-                <Zap className="text-white" size={24} />
+        <div className="flex flex-col gap-4 mb-2">
+          <div className="flex items-center justify-between">
+            {brandSettings.logoData ? (
+              <div className="flex flex-col items-center p-4 w-full">
+                <img 
+                  src={brandSettings.logoData} 
+                  alt="School Logo" 
+                  className="mb-4 rounded-lg shadow-lg" 
+                  style={{ width: '100%', maxWidth: `${brandSettings.logoWidth}px` }} 
+                />
+                <h1 className="text-slate-900 font-black uppercase tracking-tight text-center" style={{ fontSize: `${brandSettings.fontSize}px`, fontWeight: brandSettings.fontWeight }}>
+                  {brandSettings.schoolName}
+                </h1>
+                <p className="text-[10px] text-slate-400 text-center">
+                  {brandSettings.schoolAddress}
+                </p>
               </div>
-              <div>
-                <h1 className="font-black text-xl tracking-tight leading-none">TestBuilder</h1>
-                <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">MoEYS Standard AI</p>
+            ) : (
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 bg-orange-600 rounded-xl flex items-center justify-center shadow-lg shadow-orange-600/20">
+                  <Zap className="text-white" size={24} />
+                </div>
+                <div>
+                  <h1 className="font-black text-xl tracking-tight leading-none">TestBuilder</h1>
+                  <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold mt-1">MoEYS Standard AI</p>
+                </div>
               </div>
+            )}
+            <button 
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 text-slate-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-all"
+            >
+              <Settings size={20} />
+            </button>
+          </div>
+
+          {isAuthReady && (
+            <div className="p-3 bg-slate-50 rounded-xl border border-slate-100">
+              {user ? (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 overflow-hidden">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt={user.displayName || ''} className="w-8 h-8 rounded-full border border-white shadow-sm" />
+                    ) : (
+                      <div className="w-8 h-8 bg-slate-200 rounded-full flex items-center justify-center">
+                        <UserIcon className="w-4 h-4 text-slate-500" />
+                      </div>
+                    )}
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-xs font-bold text-slate-900 truncate">{user.displayName}</span>
+                      <span className="text-[10px] text-slate-500 truncate">{user.email}</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={logout}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                    title="Logout"
+                  >
+                    <LogOut size={16} />
+                  </button>
+                </div>
+              ) : (
+                <button 
+                  onClick={signInWithGoogle}
+                  className="w-full py-2 px-3 bg-white border border-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50 transition-all shadow-sm"
+                >
+                  <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-4 h-4" alt="Google" />
+                  Sign in with Google
+                </button>
+              )}
             </div>
           )}
-          <button 
-            onClick={() => setIsSettingsOpen(true)}
-            className="p-2 text-slate-400 hover:text-brand hover:bg-brand/5 rounded-xl transition-all"
-          >
-            <Settings size={20} />
-          </button>
         </div>
 
         <nav className="flex gap-1 p-1 bg-slate-100 rounded-xl">
@@ -2165,6 +2308,7 @@ export default function App() {
           background: #CBD5E0;
         }
       `}} />
-    </div>
+      </div>
+    </ErrorBoundary>
   );
 }
