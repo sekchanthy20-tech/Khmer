@@ -7,24 +7,34 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = new Database("tests.db");
+const db = (() => {
+  try {
+    const database = new Database("tests.db");
+    database.exec(`
+      CREATE TABLE IF NOT EXISTS tests (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        title TEXT NOT NULL,
+        subject TEXT NOT NULL,
+        grade TEXT NOT NULL,
+        language TEXT,
+        config TEXT,
+        content TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+    return database;
+  } catch (e) {
+    console.error("SQLite failed, using in-memory mock", e);
+    return {
+      prepare: () => ({ all: () => [], run: () => ({ lastInsertRowid: Date.now() }) }),
+      exec: () => {}
+    } as any;
+  }
+})();
 
-// Initialize database
-db.exec(`
-  CREATE TABLE IF NOT EXISTS tests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    title TEXT NOT NULL,
-    subject TEXT NOT NULL,
-    grade TEXT NOT NULL,
-    language TEXT,
-    config TEXT,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-  )
-`);
+export const app = express();
 
 async function startServer() {
-  const app = express();
   const PORT = 3000;
 
   app.use(express.json({ limit: '50mb' }));
@@ -74,9 +84,11 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (process.env.NODE_ENV !== "production" || !process.env.VERCEL) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();

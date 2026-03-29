@@ -25,7 +25,8 @@ function cn(...inputs: ClassValue[]) {
 // --- Key Rotation Helpers ---
 const getGeminiKeys = (): string[] => {
     const metaEnv = (import.meta as any).env;
-    const envKeys = metaEnv.VITE_GEMINI_API_KEYS || metaEnv.VITE_GEMINI_API_KEY || "";
+    const processEnv = (globalThis as any).process?.env || {};
+    const envKeys = metaEnv.VITE_GEMINI_API_KEYS || metaEnv.VITE_GEMINI_API_KEY || processEnv.GEMINI_API_KEY || "";
     return envKeys.split(',').map((k: string) => k.trim()).filter((k: string) => k.length > 0);
 };
 
@@ -65,6 +66,36 @@ export default function App() {
   const [numberStyle, setNumberStyle] = useState<'Khmer' | 'Roman'>('Khmer');
   const [fontSize, setFontSize] = useState('12pt');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [brandSettings, setBrandSettings] = useState({
+    schoolName: 'សាលារៀនចំណេះទូទៅ',
+    address: 'រាជធានីភ្នំពេញ',
+    logo: ''
+  });
+
+  useEffect(() => {
+    const saved = localStorage.getItem('brand_settings');
+    if (saved) setBrandSettings(JSON.parse(saved));
+  }, []);
+
+  useEffect(() => {
+    const fetchHistory = async () => {
+      try {
+        const res = await fetch('/api/tests');
+        if (res.ok) {
+          const data = await res.json();
+          setHistory(data.map((h: any) => ({ ...JSON.parse(h.content), id: h.id })));
+        } else {
+          throw new Error("API failed");
+        }
+      } catch (e) {
+        console.error("Failed to fetch history from API, using localStorage", e);
+        const local = localStorage.getItem('test_history');
+        if (local) setHistory(JSON.parse(local));
+      }
+    };
+    fetchHistory();
+  }, []);
 
   const handleGenerate = async () => {
     const keys = getGeminiKeys();
@@ -79,7 +110,34 @@ export default function App() {
         const ai = new GoogleGenAI({ apiKey: keys[i] });
         const model = ai.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-        const prompt = `Create a ${subject} test for Grade ${grade}. Requirements: ${activeEx.map(e => e.label + ":" + e.itemCount).join(', ')}. Context: ${sourceText}`;
+        const prompt = `
+          You are a professional MoEYS Curriculum Test Builder for Grade ${grade}. 
+          Create a ${subject} test in ${language}. 
+          
+          STRICT SUBJECT GUARD:
+          - The subject is ${subject}. 
+          - DO NOT include any questions, terms, or concepts from other subjects. 
+          - If the subject is Khmer, focus on Khmer Literature, Grammar, and Culture. DO NOT include Math problems.
+          - If the subject is Math, focus on Arithmetic, Algebra, Geometry. DO NOT include Khmer Literature analysis.
+          
+          CRITICAL INSTRUCTIONS:
+          1. ONLY generate content for ${subject}. 
+          2. Generate EXACTLY the following number of items for each module:
+             ${activeEx.map(e => `- ${e.label}: ${e.itemCount} items`).join('\n')}
+          3. Use Khmer language for all text if language is Khmer.
+          4. Context/Source Material: ${sourceText || "General curriculum knowledge"}
+          
+          OUTPUT FORMAT:
+          Return a JSON object with:
+          - title: A descriptive title for the test
+          - questions: An array of question objects, each with:
+            - id: unique string
+            - module_label: the label of the module it belongs to
+            - question: the question text
+            - options: array of 4 strings (for MCQ) or null
+            - answer: the correct answer
+            - explanation: a brief explanation
+        `;
 
         const result = await model.generateContent({
           contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -111,8 +169,33 @@ export default function App() {
         const data = JSON.parse(result.response.text());
         const newTest: TestData = { ...data, subject, grade, language, config: { numberStyle, showAnswerKeys: true, font: KHMER_FONTS[0], fontSize, exerciseConfigs: activeEx } };
         
+        try {
+          const res = await fetch('/api/tests', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              title: newTest.title,
+              subject: newTest.subject,
+              grade: newTest.grade,
+              language: newTest.language,
+              config: newTest.config,
+              content: newTest
+            })
+          });
+          if (res.ok) {
+            const saved = await res.json();
+            (newTest as any).id = saved.id;
+          }
+        } catch (e) {
+          console.error("Failed to save test to API", e);
+        }
+
         setTestData(newTest);
-        setHistory(prev => [newTest, ...prev]);
+        setHistory(prev => {
+          const next = [newTest, ...prev];
+          localStorage.setItem('test_history', JSON.stringify(next));
+          return next;
+        });
         setIsGenerating(false);
         return; // Success!
 
@@ -126,6 +209,48 @@ export default function App() {
   };
 
   const { getRootProps, getInputProps } = useDropzone({ onDrop: accepted => setFiles(prev => [...prev, ...accepted]) });
+
+  const exportToCSV = () => {
+    if (!testData) return;
+    const headers = ["Question ID", "Module Label", "Question", "Options", "Answer"];
+    const rows = testData.questions.map((q, i) => [
+      i + 1,
+      q.module_label,
+      q.question,
+      q.options?.join(" | ") || "",
+      q.answer
+    ]);
+    
+    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    saveAs(blob, `${testData.title}.csv`);
+  };
+
+  const exportToDocx = async () => {
+    if (!testData) return;
+    const doc = new Document({
+      sections: [{
+        properties: {},
+        children: [
+          new Paragraph({ text: brandSettings.schoolName, heading: HeadingLevel.HEADING_1, alignment: AlignmentType.CENTER }),
+          new Paragraph({ text: brandSettings.address, alignment: AlignmentType.CENTER }),
+          new Paragraph({ text: "", spacing: { after: 400 } }),
+          new Paragraph({ text: testData.title, heading: HeadingLevel.HEADING_2, alignment: AlignmentType.CENTER }),
+          ...testData.questions.flatMap((q, i) => [
+            new Paragraph({
+              children: [
+                new TextRun({ text: `${i + 1}. ${q.question}`, bold: true }),
+              ],
+              spacing: { before: 200 }
+            }),
+            ...(q.options ? [new Paragraph({ text: q.options.map((o, idx) => `(${idx + 1}) ${o}`).join("    ") })] : [])
+          ])
+        ],
+      }],
+    });
+    const blob = await Packer.toBlob(doc);
+    saveAs(blob, `${testData.title}.docx`);
+  };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 font-sans">
@@ -141,6 +266,9 @@ export default function App() {
             <select value={grade} onChange={e=>setGrade(e.target.value)} className="w-full p-2 border rounded-lg text-sm">{Array.from({length:12},(_,i)=>i+1).map(g=><option key={g}>{g}</option>)}</select>
             <button onClick={handleGenerate} disabled={isGenerating} className="w-full py-3 bg-orange-600 text-white font-bold rounded-xl shadow-lg hover:bg-orange-700 disabled:opacity-50">
               {isGenerating ? "GENERATING..." : "GENERATE TEST"}
+            </button>
+            <button onClick={()=>setIsSettingsOpen(true)} className="w-full py-2 border rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-slate-50">
+              <Settings size={14}/> Settings
             </button>
           </div>
         ) : (
@@ -162,9 +290,53 @@ export default function App() {
           <div className="flex flex-col items-center justify-center h-full gap-4"><Loader2 className="animate-spin text-orange-600" size={48}/><p className="font-bold">AI is rotating keys and building test...</p></div>
         ) : (
           <div className="max-w-4xl mx-auto bg-white p-12 shadow-2xl border min-h-screen" id="test-preview">
+            <div className="flex justify-end gap-2 mb-4 print:hidden">
+              <button onClick={exportToCSV} className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg font-bold text-xs hover:bg-slate-200">
+                <TableIcon size={16}/> CSV
+              </button>
+              <button onClick={exportToDocx} className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg font-bold text-xs hover:bg-slate-200">
+                <FileText size={16}/> DOCX
+              </button>
+              <button onClick={() => window.print()} className="flex items-center gap-2 px-4 py-2 bg-slate-100 rounded-lg font-bold text-xs hover:bg-slate-200">
+                <Download size={16}/> Print/PDF
+              </button>
+            </div>
             <h1 className="text-3xl font-black text-center mb-8">{testData?.title}</h1>
             <div className="space-y-8">
               {testData?.questions.map((q,i)=>(
                 <div key={i} className="space-y-2">
                   <p className="font-bold">{i+1}. {q.question}</p>
-                  {q.options && <div className="grid grid-cols-2 gap-4 pl-6 text-sm">{q.options.map((opt,idx)=><div key={idx}>({idx+1
+                  {q.options && <div className="grid grid-cols-2 gap-4 pl-6 text-sm">{q.options.map((opt,idx)=><div key={idx}>({idx+1}) {opt}</div>)}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </main>
+
+      <AnimatePresence>
+        {isSettingsOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+            <motion.div initial={{scale:0.9,opacity:0}} animate={{scale:1,opacity:1}} exit={{scale:0.9,opacity:0}} className="bg-white w-full max-w-md rounded-3xl p-8 shadow-2xl space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-black">Settings</h2>
+                <button onClick={()=>setIsSettingsOpen(false)} className="p-2 hover:bg-slate-100 rounded-full"><X/></button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">School Name</label>
+                  <input value={brandSettings.schoolName} onChange={e=>setBrandSettings({...brandSettings, schoolName: e.target.value})} className="w-full p-3 border rounded-xl" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-500 uppercase">Address</label>
+                  <input value={brandSettings.address} onChange={e=>setBrandSettings({...brandSettings, address: e.target.value})} className="w-full p-3 border rounded-xl" />
+                </div>
+                <button onClick={()=>{localStorage.setItem('brand_settings', JSON.stringify(brandSettings)); setIsSettingsOpen(false);}} className="w-full py-4 bg-slate-900 text-white font-bold rounded-2xl hover:bg-black">SAVE CHANGES</button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
