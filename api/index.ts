@@ -1,36 +1,19 @@
 import express from "express";
 import { createServer as createViteServer } from "vite";
-import Database from "better-sqlite3";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const db = (() => {
-  try {
-    const database = new Database("tests.db");
-    database.exec(`
-      CREATE TABLE IF NOT EXISTS tests (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        title TEXT NOT NULL,
-        subject TEXT NOT NULL,
-        grade TEXT NOT NULL,
-        language TEXT,
-        config TEXT,
-        content TEXT NOT NULL,
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-      )
-    `);
-    return database;
-  } catch (e) {
-    console.error("SQLite failed, using in-memory mock", e);
-    return {
-      prepare: () => ({ all: () => [], run: () => ({ lastInsertRowid: Date.now() }) }),
-      exec: () => {}
-    } as any;
-  }
-})();
+// Mock database for Vercel (read-only filesystem)
+const db = {
+  prepare: () => ({ 
+    all: () => [], 
+    run: () => ({ lastInsertRowid: Date.now() }) 
+  }),
+  exec: () => {}
+} as any;
 
 export const app = express();
 
@@ -78,9 +61,10 @@ async function startServer() {
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
+    const distPath = path.join(__dirname, "../dist");
+    app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist/index.html"));
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
 
