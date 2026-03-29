@@ -25,6 +25,7 @@ import {
   Share2,
   MoreVertical,
   X,
+  Menu,
   AlertCircle,
   ExternalLink,
   Book,
@@ -147,10 +148,10 @@ const INITIAL_EXERCISE_TYPES: ExerciseConfig[] = [
   { id: 'kh_grammar', subject: 'Khmer', label: 'វេយ្យាករណ៍ (Grammar)', rule: 'Parts of speech, sentence types, and punctuation rules.', description: 'Grammar and syntax.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Type' },
   { id: 'kh_spelling', subject: 'Khmer', label: 'អក្ខរាវិរុទ្ធ (Spelling)', rule: 'Identify correctly spelled words or correct spelling errors.', description: 'Orthography and spelling.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'PenTool' },
   { id: 'kh_writing', subject: 'Khmer', label: 'សំណេរ (Writing)', rule: 'Short writing prompts, sentence construction, or paragraph completion.', description: 'Composition and creative writing.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'Edit3' },
-  { id: 'kh_mcq', subject: 'Khmer', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Standard multiple choice questions with 4 options.', description: 'General multiple choice.', selected: false, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
-  { id: 'kh_ct', subject: 'Khmer', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Open-ended questions requiring analytical reasoning and deep thinking.', description: 'Deep reasoning and analysis questions.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Brain' },
-  { id: 'kh_ans', subject: 'Khmer', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Comprehension questions requiring written answers based on text or general knowledge.', description: 'Standard question and answer format.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'FileText' },
-  { id: 'kh_disc', subject: 'Khmer', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions for classroom discussion or debate.', description: 'Discussion and debate questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+  { id: 'kh_mcq', subject: 'Khmer', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Standard multiple choice questions with 4 options.', description: 'General multiple choice.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'kh_ct', subject: 'Khmer', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Exercises about ending sentences, MCQ, Circle the correct answer, logic and pattern completion. NOT open-ended discussion.', description: 'Logic and pattern completion.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'kh_ans', subject: 'Khmer', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Comprehension questions requiring written answers based on text or general knowledge.', description: 'Standard question and answer format.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'kh_disc', subject: 'Khmer', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions for classroom discussion or debate.', description: 'Discussion and debate questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'kh_fib', subject: 'Khmer', label: 'បំពេញល្បះ (Fill-in-blank)', rule: 'Complete sentences by filling in missing words or phrases.', description: 'Sentence completion.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Minus' },
 
   // --- MATH ---
@@ -158,28 +159,66 @@ const INITIAL_EXERCISE_TYPES: ExerciseConfig[] = [
   { id: 'ma_prob', subject: 'Math', label: 'ចំណោទ (Word Problems)', rule: 'Real-world math problems requiring logical steps and solutions.', description: 'Applied mathematics.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Zap' },
   { id: 'ma_geo', subject: 'Math', label: 'ធរណីមាត្រ (Geometry)', rule: 'Shapes, area, volume, and geometric properties. Use image_prompt for diagrams.', description: 'Geometry and spatial reasoning.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Triangle' },
   { id: 'ma_stat', subject: 'Math', label: 'ស្ថិតិ (Statistics)', rule: 'Data interpretation, probability, and chart-based questions.', description: 'Data and probability.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'BarChart' },
-  { id: 'ma_mcq', subject: 'Math', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Math problems with 4 distinct options and LaTeX formulas.', description: 'Math multiple choice.', selected: false, active: true, itemCount: 10, columns: 1, icon: 'Hash' },
-  { id: 'ma_disc', subject: 'Math', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about mathematical concepts or real-world applications.', description: 'Math discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+  { id: 'ma_mcq', subject: 'Math', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Math problems with 4 distinct options and LaTeX formulas.', description: 'Math multiple choice.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Hash' },
+  { id: 'ma_ct', subject: 'Math', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Mathematical logic puzzles, sequence completion, and pattern recognition. NOT open-ended discussion.', description: 'Math logic and patterns.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'ma_ans', subject: 'Math', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Mathematical theory questions requiring written explanations.', description: 'Math Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'ma_disc', subject: 'Math', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about mathematical concepts or real-world applications.', description: 'Math discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'ma_deep_exp', subject: 'Math', label: 'ដំណោះស្រាយលម្អិត (Deep Math)', rule: 'Provide deep, step-by-step mathematical explanations in the traditional Khmer MoEYS style (គេមាន, រក, តាមរូបមន្ត, ដូចនេះ). Use LaTeX.', description: 'Detailed step-by-step solutions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'FileText' },
 
-  // --- SCIENCE (Physics, Chemistry, Biology) ---
-  { id: 'sci_disc', subject: 'Physics', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about physical laws, scientific ethics, or real-world applications.', description: 'Physics discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
-  { id: 'sci_theory', subject: 'Physics', label: 'ទ្រឹស្ដី (Theory)', rule: 'Conceptual questions about physical laws and principles.', description: 'Physics theory.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Activity' },
-  { id: 'sci_calc', subject: 'Physics', label: 'លំហាត់គណនា (Calculation)', rule: 'Physics problems requiring formula application and calculation.', description: 'Physics problems.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Calculator' },
-  { id: 'chem_disc', subject: 'Chemistry', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about chemical reactions, safety, or environmental impact.', description: 'Chemistry discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+  // --- PHYSICS ---
+  { id: 'phy_mcq', subject: 'Physics', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Physics conceptual or calculation questions with 4 options.', description: 'Physics MCQ.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'phy_ct', subject: 'Physics', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Physics logic puzzles, experimental design analysis, and pattern recognition in data. NOT open-ended discussion.', description: 'Physics logic.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'phy_ans', subject: 'Physics', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Physics theory questions requiring written answers.', description: 'Physics Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'phy_disc', subject: 'Physics', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about physical laws, scientific ethics, or real-world applications.', description: 'Physics discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
+  { id: 'phy_theory', subject: 'Physics', label: 'ទ្រឹស្ដី (Theory)', rule: 'Conceptual questions about physical laws and principles.', description: 'Physics theory.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Activity' },
+  { id: 'phy_calc', subject: 'Physics', label: 'លំហាត់គណនា (Calculation)', rule: 'Physics problems requiring formula application and calculation.', description: 'Physics problems.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Calculator' },
+
+  // --- CHEMISTRY ---
+  { id: 'chem_mcq', subject: 'Chemistry', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Chemistry conceptual or calculation questions with 4 options.', description: 'Chemistry MCQ.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'chem_ct', subject: 'Chemistry', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Chemistry logic puzzles, reaction prediction, and pattern recognition in chemical data. NOT open-ended discussion.', description: 'Chemistry logic.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'chem_ans', subject: 'Chemistry', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Chemistry theory questions requiring written answers.', description: 'Chemistry Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'chem_disc', subject: 'Chemistry', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about chemical reactions, safety, or environmental impact.', description: 'Chemistry discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'chem_eq', subject: 'Chemistry', label: 'សមីការគីមី (Equations)', rule: 'Balancing chemical equations and reaction types.', description: 'Chemical reactions.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'FlaskConical' },
-  { id: 'bio_disc', subject: 'Biology', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about biological systems, ethics, or health.', description: 'Biology discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+
+  // --- BIOLOGY ---
+  { id: 'bio_mcq', subject: 'Biology', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Biology conceptual questions with 4 options.', description: 'Biology MCQ.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'bio_ct', subject: 'Biology', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Biology logic puzzles, genetic crosses, and pattern recognition in biological systems. NOT open-ended discussion.', description: 'Biology logic.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'bio_ans', subject: 'Biology', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Biology theory questions requiring written answers.', description: 'Biology Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'bio_disc', subject: 'Biology', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about biological systems, ethics, or health.', description: 'Biology discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'bio_cell', subject: 'Biology', label: 'ជីវវិទ្យា (Biology)', rule: 'Questions about cells, organisms, and biological systems.', description: 'Biological concepts.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Dna' },
 
-  // --- SOCIAL STUDIES ---
-  { id: 'hist_disc', subject: 'History', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about historical causes, effects, and lessons.', description: 'History discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+  // --- HISTORY ---
+  { id: 'hist_mcq', subject: 'History', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'History questions with 4 options.', description: 'History MCQ.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'hist_ct', subject: 'History', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Historical cause-effect analysis, timeline logic, and pattern recognition in historical events. NOT open-ended discussion.', description: 'History logic.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'hist_ans', subject: 'History', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'History questions requiring written answers.', description: 'History Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'hist_disc', subject: 'History', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about historical causes, effects, and lessons.', description: 'History discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'hist_event', subject: 'History', label: 'ប្រវត្តិវិទ្យា (History)', rule: 'Questions about historical events, dates, and figures in Cambodia and the world.', description: 'Historical knowledge.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'History' },
-  { id: 'geo_disc', subject: 'Geography', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about human-environment interaction or global issues.', description: 'Geography discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+
+  // --- GEOGRAPHY ---
+  { id: 'geo_mcq', subject: 'Geography', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Geography questions with 4 options.', description: 'Geography MCQ.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'geo_ct', subject: 'Geography', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Geography logic puzzles, map pattern recognition, and environmental cause-effect analysis. NOT open-ended discussion.', description: 'Geography logic.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'geo_ans', subject: 'Geography', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Geography questions requiring written answers.', description: 'Geography Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'geo_disc', subject: 'Geography', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about human-environment interaction or global issues.', description: 'Geography discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'geo_map', subject: 'Geography', label: 'ភូមិវិទ្យា (Geography)', rule: 'Questions about maps, climate, and physical geography.', description: 'Geographical knowledge.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Map' },
-  { id: 'civ_disc', subject: 'Moral-Civics', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about ethics, society, and civic duties. Example: "How can we make more friends at school?".', description: 'Civics discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+
+  // --- MORAL-CIVICS ---
+  { id: 'civ_mcq', subject: 'Moral-Civics', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Civics questions with 4 options.', description: 'Civics MCQ.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'civ_ct', subject: 'Moral-Civics', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Moral dilemmas with specific choices, civic duty logic puzzles, and social pattern recognition. NOT open-ended discussion.', description: 'Civics logic.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'civ_ans', subject: 'Moral-Civics', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Civics questions requiring written answers.', description: 'Civics Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'civ_disc', subject: 'Moral-Civics', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about ethics, society, and civic duties.', description: 'Civics discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'civ_moral', subject: 'Moral-Civics', label: 'សីលធម៌-ពលរដ្ឋ (Civics)', rule: 'Questions about ethics, society, and civic duties.', description: 'Moral and civic education.', selected: true, active: true, itemCount: 5, columns: 1, icon: 'Heart' },
-  { id: 'eng_disc', subject: 'English', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions in English to practice speaking and critical thinking.', description: 'English discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
-  { id: 'ict_disc', subject: 'ICT', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about technology, digital citizenship, and the future of ICT.', description: 'ICT discussion questions.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'MessageSquare' },
+
+  // --- ENGLISH ---
+  { id: 'eng_mcq', subject: 'English', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'English grammar or vocabulary questions with 4 options.', description: 'English MCQ.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'eng_ct', subject: 'English', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'English logic puzzles, sentence ending completion, and pattern recognition in text. NOT open-ended discussion.', description: 'English logic.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'eng_ans', subject: 'English', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'English comprehension questions requiring written answers.', description: 'English Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'eng_disc', subject: 'English', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions in English to practice speaking and critical thinking.', description: 'English discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
+
+  // --- ICT ---
+  { id: 'ict_mcq', subject: 'ICT', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'ICT questions with 4 options.', description: 'ICT MCQ.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
+  { id: 'ict_ct', subject: 'ICT', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'ICT logic puzzles, algorithm pattern recognition, and technology cause-effect analysis. NOT open-ended discussion.', description: 'ICT logic.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'ict_ans', subject: 'ICT', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'ICT questions requiring written answers.', description: 'ICT Q&A.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'FileText' },
+  { id: 'ict_disc', subject: 'ICT', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions about technology, digital citizenship, and the future of ICT.', description: 'ICT discussion questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
 ];
 
 const INITIAL_PROTOCOLS: MasterProtocol[] = [
@@ -320,7 +359,10 @@ const generateTest = async (
   const moduleRequirements = config.exerciseConfigs.map(ex => `- ${ex.label} (${ex.id}): Generate EXACTLY ${ex.itemCount} items. Use "${ex.label}" as the 'module_label' in the JSON response.`).join('\n');
 
   // Calculate total MCQ count and generate balanced keys
-  const mcqModules = ['kh_mcq', 'ma_mcq', 'kh_vocab', 'kh_grammar', 'kh_spelling'];
+  const mcqModules = config.exerciseConfigs
+    .filter(ex => ex.id.endsWith('_mcq') || ex.id.endsWith('_ct') || ex.id.endsWith('_vocab') || ex.id.endsWith('_grammar') || ex.id.endsWith('_spelling'))
+    .map(ex => ex.id);
+  
   const totalMcqCount = config.exerciseConfigs
     .filter(ex => mcqModules.includes(ex.id))
     .reduce((sum, ex) => sum + ex.itemCount, 0);
@@ -329,7 +371,7 @@ const generateTest = async (
   const keysString = balancedKeys.join(', ');
 
   const prompt = `
-    I HATE SUMMARIES. You are a STRICT MULTI-MODULE GENERATION ENGINE for the "Cambodian MoEYS National Curriculum".
+    YOU ARE A COMPLETIONIST ENGINE for the "Cambodian MoEYS National Curriculum". YOU NEVER SKIP ITEMS. YOU NEVER SUMMARIZE. YOU ALWAYS GENERATE THE FULL REQUESTED QUANTITY.
     
     MoEYS STANDARDS & PEDAGOGY:
     - Grade 1-6 (Primary): Focus on foundational literacy, basic arithmetic, and moral education. Use simple, clear language.
@@ -352,6 +394,13 @@ const generateTest = async (
         1. Literal: Questions directly answered by the text.
         2. Contextual/Moral: Questions based on the TOPIC, THEME, or MORAL of the text (e.g., if the text is about a bird and a cow, ask about 'honesty', 'friendship', or 'gratitude' even if those words aren't in the text).
     - COMPACTNESS (CRITICAL): The generated test MUST be space-efficient. Avoid long, wordy questions or options if they can be expressed more concisely. PREFER 'single' or 'double' options_layout for MCQs.
+    - NO DUPLICATES (STRICT): Every single question MUST be unique. DO NOT repeat the same question or very similar questions within the same module or across different modules. Use different numbers, scenarios, and contexts for each item. If you generate 10 math questions, they MUST use 10 different sets of numbers.
+    - CRITICAL THINKING (NEW DEFINITION): For any module with "ct" in its ID (Critical Thinking), generate logic-based exercises such as:
+        1. Sentence Completion: Ending a sentence logically.
+        2. Pattern Recognition: Identifying the next item in a sequence.
+        3. Visual Logic: If an image_prompt is used, identify shapes or patterns.
+        4. MCQ/Circle: Multiple choice questions where the student must "circle" the correct answer.
+        MANDATORY: These are NOT open-ended discussion questions. They MUST have a clear, objective correct answer.
     - VISUAL MATH (CRITICAL): For math questions like "X + Y = ?", the 'image_prompt' MUST specify the EXACT count of items for both X and Y. Example: "4 red apples, a plus sign, 4 red apples...". Use simple, countable objects like apples, mangoes, or pencils.
     - KHMER MATH STYLE (CRITICAL): For "ma_deep_exp" (Deep Math Explanation), you MUST follow the traditional Khmer MoEYS style for solving problems:
         1. Use "ដំណោះស្រាយ" (Solution) as the header.
@@ -370,8 +419,10 @@ const generateTest = async (
     - Use Khmer language for all instructions, questions, and content unless the target language is explicitly set to something else.
     
     QUANTITY REQUIREMENTS (MANDATORY):
-    For each module below, you MUST generate the EXACT number of items specified. Do not skip any module.
+    For each module below, you MUST generate the EXACT number of items specified. DO NOT SKIP ANY MODULE. DO NOT SKIP ANY ITEM. IF YOU GENERATE FEWER ITEMS THAN REQUESTED, THE TEST IS CONSIDERED A FAILURE.
     ${moduleRequirements}
+    
+    TOTAL ITEMS TO GENERATE: ${config.exerciseConfigs.reduce((sum, ex) => sum + ex.itemCount, 0)} items.
     
     TASK: Create a Grade ${grade} test for ${subject} in ${language}.
     
@@ -386,6 +437,9 @@ const generateTest = async (
     {
       "title": "Technical Title",
       "source_text": "The exact text extracted",
+      "manifest": {
+        "module_id": number_of_items_generated
+      },
       "questions": [
         {
           "id": "q_1",
@@ -415,13 +469,18 @@ const generateTest = async (
       model: modelName,
       contents: [{ parts }],
       config: {
-        systemInstruction: "You are a specialized MoEYS Curriculum Test Builder. Generate high-quality exercises. If source is short, use internal knowledge of MoEYS curriculum. Never return empty questions.",
+        systemInstruction: "You are a specialized MoEYS Curriculum Test Builder. Generate high-quality exercises. If source is short, use internal knowledge of MoEYS curriculum. Never return empty questions. YOU MUST GENERATE ALL REQUESTED ITEMS WITHOUT EXCEPTION.",
         responseMimeType: "application/json",
+        maxOutputTokens: 16384,
         responseSchema: {
           type: Type.OBJECT,
           properties: {
             title: { type: Type.STRING },
             source_text: { type: Type.STRING },
+            manifest: { 
+              type: Type.OBJECT,
+              description: "A map of module IDs to the number of items generated for that module. MUST match requested counts."
+            },
             questions: {
               type: Type.ARRAY,
               items: {
@@ -559,6 +618,7 @@ export default function App() {
   const [protocols, setProtocols] = useState<MasterProtocol[]>(INITIAL_PROTOCOLS);
   const [strictRules, setStrictRules] = useState<StrictRule[]>(INITIAL_STRICT_RULES);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [settingsTab, setSettingsTab] = useState<'Backbone Logic' | 'General' | 'Engine' | 'Exercises' | 'Design'>('Backbone Logic');
   const [protocolCategory, setProtocolCategory] = useState<'General' | 'Grammar' | 'Vocabulary' | 'Reading'>('General');
   const [brandSettings, setBrandSettings] = useState<BrandSettings>(() => {
@@ -577,6 +637,13 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('dp_brand_v46', JSON.stringify(brandSettings));
   }, [brandSettings]);
+
+  useEffect(() => {
+    // Close sidebar on mobile when view changes
+    if (window.innerWidth < 768) {
+      setIsSidebarOpen(false);
+    }
+  }, [view]);
 
   const fetchHistory = async () => {
     try {
@@ -684,6 +751,7 @@ export default function App() {
       };
 
       setTestData(newTestData);
+      if (window.innerWidth < 768) setIsSidebarOpen(false);
       
       await fetch('/api/tests', {
         method: 'POST',
@@ -1052,8 +1120,27 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-900">
+      {/* Mobile Header Toggle */}
+      <div className="md:hidden flex items-center justify-between p-4 bg-white border-b border-slate-200 sticky top-0 z-40">
+        <div className="flex items-center gap-2">
+          <div className="h-8 w-8 bg-orange-600 rounded-lg flex items-center justify-center shadow-lg shadow-orange-600/20">
+            <Zap className="text-white" size={16} />
+          </div>
+          <h1 className="font-black text-lg tracking-tight">TestBuilder</h1>
+        </div>
+        <button 
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 text-slate-500 hover:bg-slate-100 rounded-lg transition-all"
+        >
+          {isSidebarOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
+      </div>
+
       {/* Sidebar */}
-      <aside className="w-full md:w-80 bg-white border-r border-slate-200 p-6 flex flex-col gap-6 overflow-y-auto max-h-screen sticky top-0 z-30">
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-50 w-80 bg-white border-r border-slate-200 p-6 flex flex-col gap-6 overflow-y-auto transition-transform duration-300 md:relative md:translate-x-0 md:z-30 md:max-h-screen md:sticky",
+        isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
         <div className="flex items-center justify-between mb-2">
           {brandSettings.logoData ? (
             <div className="flex flex-col items-center p-4 w-full">
@@ -1299,7 +1386,11 @@ export default function App() {
                   animate={{ opacity: 1, x: 0 }}
                   key={item.id} 
                   className="p-4 bg-white border border-slate-200 rounded-2xl hover:border-brand/30 hover:shadow-lg hover:shadow-brand/5 transition-all group cursor-pointer relative overflow-hidden" 
-                  onClick={() => { setTestData(item); setView('build'); }}
+                  onClick={() => { 
+                    setTestData(item); 
+                    setView('build'); 
+                    if (window.innerWidth < 768) setIsSidebarOpen(false);
+                  }}
                 >
                   <div className="flex justify-between items-start mb-3">
                     <span className="text-[9px] font-black uppercase tracking-widest text-brand bg-brand/10 px-2 py-1 rounded-lg">{item.subject}</span>
@@ -1322,6 +1413,14 @@ export default function App() {
           </div>
         )}
       </aside>
+
+      {/* Overlay for mobile */}
+      {isSidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden"
+          onClick={() => setIsSidebarOpen(false)}
+        />
+      )}
 
       {/* Main Content */}
       <main className="flex-1 p-4 md:p-10 overflow-y-auto relative">
