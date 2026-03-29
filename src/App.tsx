@@ -149,7 +149,7 @@ const INITIAL_EXERCISE_TYPES: ExerciseConfig[] = [
   { id: 'kh_spelling', subject: 'Khmer', label: 'អក្ខរាវិរុទ្ធ (Spelling)', rule: 'Identify correctly spelled words or correct spelling errors.', description: 'Orthography and spelling.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'PenTool' },
   { id: 'kh_writing', subject: 'Khmer', label: 'សំណេរ (Writing)', rule: 'Short writing prompts, sentence construction, or paragraph completion.', description: 'Composition and creative writing.', selected: false, active: true, itemCount: 3, columns: 1, icon: 'Edit3' },
   { id: 'kh_mcq', subject: 'Khmer', label: 'ជ្រើសរើសចម្លើយ (MCQ)', rule: 'Standard multiple choice questions with 4 options.', description: 'General multiple choice.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'CheckSquare' },
-  { id: 'kh_ct', subject: 'Khmer', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Open-ended questions requiring analytical reasoning and deep thinking.', description: 'Deep reasoning and analysis questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
+  { id: 'kh_ct', subject: 'Khmer', label: 'វិភាគ និងត្រិះរិះ (Critical Thinking)', rule: 'Analytical exercises, scenarios, or tasks requiring reasoning and deep thinking. Do not just ask simple questions.', description: 'Deep reasoning and analysis exercises.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'Brain' },
   { id: 'kh_ans', subject: 'Khmer', label: 'សំណួរ និងចម្លើយ (Q&A)', rule: 'Comprehension questions requiring written answers based on text or general knowledge.', description: 'Standard question and answer format.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'FileText' },
   { id: 'kh_disc', subject: 'Khmer', label: 'សំណួរពិភាក្សា (Discussion)', rule: 'Open-ended questions for classroom discussion or debate.', description: 'Discussion and debate questions.', selected: true, active: true, itemCount: 10, columns: 1, icon: 'MessageSquare' },
   { id: 'kh_fib', subject: 'Khmer', label: 'បំពេញល្បះ (Fill-in-blank)', rule: 'Complete sentences by filling in missing words or phrases.', description: 'Sentence completion.', selected: false, active: true, itemCount: 5, columns: 1, icon: 'Minus' },
@@ -197,6 +197,8 @@ const INITIAL_STRICT_RULES: StrictRule[] = [
   { id: 'r3', title: 'BALANCED ANSWERS', description: 'Ensure a random but balanced distribution of correct answer keys (A, B, C, D).', active: true },
   { id: 'r4', title: 'KHMER NAMES POLICY', description: 'Use Khmer names. DO NOT use "មីណា" (Mina). DO NOT use names starting with "មី" (Mi) as it is considered rude.', active: true },
   { id: 'r5', title: 'MoEYS ALIGNMENT', description: 'Ensure all content and pedagogical style align strictly with the Cambodian MoEYS national curriculum standards.', active: true },
+  { id: 'r6', title: 'NO THAI LANGUAGE', description: 'Absolutely NO Thai characters or language. Use only Khmer script.', active: true },
+  { id: 'r7', title: 'NO MATH IN KHMER', description: 'Khmer language exercises must not contain mathematical calculations or logic puzzles.', active: true },
 ];
 const FONT_SIZES = ['10pt', '11pt', '12pt', '14pt', '16pt', '18pt'];
 const KHMER_MCQ_LABELS = ['ក', 'ខ', 'គ', 'ឃ', 'ង', 'ច'];
@@ -343,6 +345,8 @@ const generateTest = async (
     
     STRICT RULES:
     ${activeRules}
+    - NO THAI LANGUAGE (CRITICAL): Absolutely NO Thai characters (e.g., ก, ข, ค) or Thai words. Use ONLY Khmer script for Khmer content.
+    - NO MATH IN KHMER (CRITICAL): Khmer language exercises (Reading, Vocab, Grammar, CT) MUST NOT contain mathematical calculations, logic puzzles, or arithmetic. Keep Khmer exercises focused on literacy, literature, and language analysis.
     ${config.numberStyle === 'Khmer' ? '- MANDATORY: Use Khmer numerals (០, ១, ២, ៣, ៤, ៥, ៦, ៧, ៨, ៩) for all numbering and mathematical values.' : '- Use Roman/Arabic numerals.'}
     - MANDATORY: For MCQ options, provide ONLY the answer text in the 'options' array. DO NOT include prefixes like 'A.', 'B.', 'ក.', 'ខ.' etc.
     - EXTREME NEAR-MISS DISTRACTORS (CRITICAL): For ALL multiple-choice questions, all options MUST be plausible and potentially correct in some context, but only ONE is the absolute 'best' answer. Example: 'ដើម្បីឱ្យមានមិត្តភក្តិកាន់តែច្រើន យើងគួរតែ ____ ក. ខិតខំរៀនសូត្រ ខ. ជួយពួកគេ និងចែករំលែកអ្វីមួយ គ. និយាយរឿងល្អៗអំពីពួកគេ ឃ. ធ្វើឱ្យពួកគេមានអារម្មណ៍ល្អ' (To have more friends, we should: A. Study hard, B. Help them and share something, C. Speak good things about them, D. Make them feel good). While C and D are good, B is the most direct and 'best' answer in the MoEYS curriculum context. This is MANDATORY to make the test challenging and high-quality.
