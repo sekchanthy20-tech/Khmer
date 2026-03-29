@@ -345,7 +345,7 @@ const generateTest = async (
     
     STRICT RULES:
     ${activeRules}
-    - NO THAI LANGUAGE (CRITICAL): Absolutely NO Thai characters (e.g., ก, ข, ค) or Thai words. Use ONLY Khmer script for Khmer content.
+    - NO THAI LANGUAGE (CRITICAL): Absolutely NO Thai characters (e.g., ก, ข, ค, ง, จ, ฉ, ช, ซ, ฌ, ญ, ฎ, ฏ, ฐ, ฑ, ฒ, ณ, ด, ต, ถ, ท, ธ, น, บ, ป, ผ, ฝ, พ, ฟ, ภ, ม, ย, ร, ล, ว, ศ, ษ, ส, ห, ฬ, อ, ฮ) or Thai words. Use ONLY Khmer script (ក, ខ, គ, ឃ, ង, ច, ឆ, ជ, ឈ, ញ, ដ, ឋ, ឌ, ឍ, ណ, ត, ថ, ទ, ធ, ន, ប, ផ, ព, ភ, ម, យ, រ, ល, វ, ស, ហ, ឡ, អ) for Khmer content.
     - NO MATH IN KHMER (CRITICAL): Khmer language exercises (Reading, Vocab, Grammar, CT) MUST NOT contain mathematical calculations, logic puzzles, or arithmetic. Keep Khmer exercises focused on literacy, literature, and language analysis.
     ${config.numberStyle === 'Khmer' ? '- MANDATORY: Use Khmer numerals (០, ១, ២, ៣, ៤, ៥, ៦, ៧, ៨, ៩) for all numbering and mathematical values.' : '- Use Roman/Arabic numerals.'}
     - MANDATORY: For MCQ options, provide ONLY the answer text in the 'options' array. DO NOT include prefixes like 'A.', 'B.', 'ក.', 'ខ.' etc.
